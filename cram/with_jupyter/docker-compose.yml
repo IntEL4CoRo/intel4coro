@@ -3,12 +3,21 @@
 version: '3'
 services:  
   cram:
-    image: "arthurniedz/cram:latest"
-    container_name: cram_container
+    image: "cram_xvfb"
+    container_name: cram_container_test
     network_mode: host
     privileged: true
     environment:
       - DISPLAY=${DISPLAY}
     volumes:
       - ./lectures:/home/lectures
+    network_mode: host
+  rviz:
+    image: "rvizweb_image"
+    container_name: rviz_container
+    depends_on:
+      - 'cram'
+    privileged: true
+    environment:
+      - DISPLAY=${DISPLAY}
     network_mode: host
