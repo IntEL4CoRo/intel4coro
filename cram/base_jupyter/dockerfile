@@ -34,10 +34,11 @@ ENV JUPYTER_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/jupyter/common-lisp-jupyter.ro
 ARG NEW_USER=bhavya
 ENV HOME /home/${NEW_USER}
 
-RUN useradd --create-home --shell=/bin/false --uid=1001 ${NEW_USER} && \
-    usermod -aG sudo $NEW_USER && \
-    passwd -d $NEW_USER
+RUN useradd --create-home --shell=/bin/bash --uid=1001 ${NEW_USER} && \
+    usermod -aG sudo ${NEW_USER} && \
+    passwd -d ${NEW_USER}
 
+RUN chmod 777 /${HOME}
 
 # ------
 RUN echo "--- Set up ROS environment variables ---"
@@ -105,7 +106,7 @@ RUN echo $(ls -1 /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp)
 #COPY /root/.local/share/jupyter/kernels/common-lisp /home/${NB_USER}/.local/share/jupyter/kernels/
 RUN echo $(ls -1 /home/${NEW_USER}/.local/share/jupyter/kernels)
 RUN chown -R ${NEW_USER} /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp
-RUN chgrp -R users /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp
+#RUN chgrp -R users /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp
 RUN chmod 777 /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp -R 
 #RUN chmod +r /home/${NB_USER}/.local/share/jupyter/runtime
 
@@ -113,9 +114,11 @@ USER ${NEW_USER}
 RUN /usr/bin/sbcl --non-interactive --load /home/${NEW_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
 RUN echo $(ls -1 /home/${NEW_USER}/.local/share/jupyter/kernels/)
 RUN echo $(ls -1 /home/workspace/.local/share/jupyter/kernels/)
+
 # ------
 #USER ${NB_USER}
 USER root
+RUN fix-permissions "/home/${NEW_USER}"
 RUN apt-get update
 RUN conda install --quiet --yes nbgitpuller
 RUN apt-get install -y net-tools xvfb
@@ -126,7 +129,8 @@ RUN echo $(ls -1 /home/jovyan/.local/share/jupyter/)
 RUN echo $(ls -1 /home/jovyan/.local/share/jupyter/kernels/)
 RUN mkdir /home/${NB_USER}/bhavya
 RUN echo $(ls -1 /home/jovyan/)
-
+WORKDIR "${HOME}"
+USER ${NEW_USER}
 
 
 
