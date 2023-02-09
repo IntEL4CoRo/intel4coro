@@ -8,9 +8,9 @@ ARG ROS_PKG=ros_base
 ENV ROS_DISTRO=noetic
 ENV ROS_ROOT=/opt/ros/${ROS_DISTRO}
 ENV ROS_PYTHON_VERSION=3
-
-
 ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update
+RUN conda install -y empy pyyaml catkin_pkg
 
 # Setup ROS
 RUN apt-get update -y && apt-get install -y lsb-release && apt-get install -y gnupg2 || true && \
@@ -31,122 +31,80 @@ ENV CRAM_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/cram-20.04-http.rosinstall"
 ENV JUPYTER_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/jupyter/common-lisp-jupyter.rosinstall"
 
 #USER ${NB_USER}
-ARG NEW_USER=bhavya
-ENV HOME /home/${NEW_USER}
-
-RUN useradd --create-home --shell=/bin/bash --uid=1001 ${NEW_USER} && \
-    usermod -aG sudo ${NEW_USER} && \
-    passwd -d ${NEW_USER}
-
-RUN chmod 777 /${HOME}
+ENV HOME /home/${NB_USER}
 
 # ------
 RUN echo "--- Set up ROS environment variables ---"
 RUN sudo rosdep init
-USER ${NEW_USER}
+USER ${NB_UID}
 RUN source /opt/ros/noetic/setup.bash
-ENV ROS_PACKAGE_PATH=/home/${NEW_USER}/workspace/ros/src:/opt/ros/noetic/share:/opt/ros/noetic/stacks
-ENV CMAKE_PREFIX_PATH=/home/${NEW_USER}/workspace/ros/devel:/opt/ros/noetic
+ENV ROS_PACKAGE_PATH=/home/${NB_USER}/workspace/ros/src:/opt/ros/noetic/share:/opt/ros/noetic/stacks
+ENV CMAKE_PREFIX_PATH=/home/${NB_USER}/workspace/ros/devel:/opt/ros/noetic
 ENV PATH=/opt/ros/noetic/bin:$PATH
 ENV ROS_ROOT=/opt/ros/noetic/share/ros
-ENV PYTHONPATH=/home/${NEW_USER}/workspace/ros/devel/lib/python3/dist-packages:/opt/ros/noetic/lib/python3/dist-packages
+ENV PYTHONPATH=/home/${NB_USER}/workspace/ros/devel/lib/python3/dist-packages:/opt/ros/noetic/lib/python3/dist-packages
 ENV PATH=/root/.local/bin:$PATH
+USER root
 RUN rosdep update 
 # using as root is not intended, it works though.
 
-USER root 
 # ------
 RUN echo "--- Install ROS tools and dependencies ---"
 RUN apt-get update && apt-get upgrade -y 
 RUN apt-get install -y dialog curl git python3-dev python3-pip python3-catkin-tools python3-rosdep \ 
 python3-rosinstall python3-rosinstall-generator python3-wstool build-essential ros-noetic-roslisp-repl
 
-USER ${NEW_USER}
+
 # ------
 RUN echo "--- Set up Catkin Workspace ---"
-RUN mkdir -p /home/${NEW_USER}/workspace/ros/src 
-WORKDIR /home/${NEW_USER}/workspace/ros
+USER root
+RUN mkdir -p /home/${NB_USER}/workspace/ros/src 
+WORKDIR /home/${NB_USER}/workspace/ros
 RUN catkin init
-WORKDIR /home/${NEW_USER}/workspace/ros/src
+WORKDIR /home/${NB_USER}/workspace/ros/src
 RUN wstool init
 RUN wstool merge $CRAM_ROSINSTALL_FILE
 RUN wstool update
 USER root
 RUN rosdep install -y --ignore-src --from-paths ./ -r
-WORKDIR /home/${NEW_USER}/workspace/ros/
-RUN sudo pip3 install empy 
-RUN sudo pip3 install catkin_pkg
-RUN sudo pip3 install pyyaml
-RUN sudo apt install -y python3-catkin-pkg-modules python3-rospkg-modules
-RUN catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3
+WORKDIR /home/${NB_USER}/workspace/ros/
+RUN apt-get install -y python3-catkin-tools
+RUN catkin config --extend /opt/ros/noetic
+RUN catkin build
 
 # ------
-RUN echo "--- Install Juypterlab ---" 
-USER ${NEW_USER}
-WORKDIR /home/${NEW_USER}/workspace/ros/src
+RUN echo "--- Install common-lisp-jupyter---" 
+WORKDIR /home/${NB_USER}/workspace/ros/src
 RUN catkin_create_pkg jupyter
-WORKDIR /home/${NEW_USER}/workspace/ros/src/jupyter
+WORKDIR /home/${NB_USER}/workspace/ros/src/jupyter
 RUN wstool init 
 RUN wstool merge $JUPYTER_ROSINSTALL_FILE
 RUN wstool update
 RUN rosdep install -y --ignore-src --from-paths ./ -r
-WORKDIR /home/${NEW_USER}/workspace/ros/
-USER root 
-RUN catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3
-RUN echo $(ls -1 /home/${NEW_USER}/.local/)
-ENV ROSLISP_PACKAGE_DIRECTORIES=/home/${NEW_USER}/workspace/ros/devel/share/common-lisp
-RUN /usr/bin/sbcl --non-interactive --load /home/${NEW_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
+WORKDIR /home/${NB_USER}/workspace/ros/
+RUN catkin build 
+RUN echo $(ls -1 /home/${NB_USER}/.local/)
+ENV ROSLISP_PACKAGE_DIRECTORIES=/home/${NB_USER}/workspace/ros/devel/share/common-lisp
+RUN /usr/bin/sbcl --non-interactive --load /home/${NB_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
 
-#RUN echo $(ls -1 /home/jovyan/.local/share/jupyter/)
-#RUN echo $(ls -1 /home/jovyan/.local/share/)
-RUN echo $(ls -1 /home/bhavya/.local/)
-#RUN echo $(ls -1 /root/.local/share/jupyter/)
-RUN echo $(ls -1 /home/bhavya/)
-RUN echo $(ls -1 /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp)
-#COPY /root/.local/share/jupyter/kernels/common-lisp /home/${NB_USER}/.local/share/jupyter/kernels/
-RUN echo $(ls -1 /home/${NEW_USER}/.local/share/jupyter/kernels)
-RUN chown -R ${NEW_USER} /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp
-#RUN chgrp -R users /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp
-RUN chmod 777 /home/${NEW_USER}/.local/share/jupyter/kernels/common-lisp -R 
-#RUN chmod +r /home/${NB_USER}/.local/share/jupyter/runtime
+#setting kernel owner n group 
+RUN chown -R ${NB_USER} /home/${NB_USER}/.local/share/jupyter/kernels/common-lisp
+RUN chgrp -R users /home/${NB_USER}/.local/share/jupyter/kernels/common-lisp
 
-USER ${NEW_USER}
-RUN /usr/bin/sbcl --non-interactive --load /home/${NEW_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
-RUN echo $(ls -1 /home/${NEW_USER}/.local/share/jupyter/kernels/)
-RUN echo $(ls -1 /home/workspace/.local/share/jupyter/kernels/)
+USER ${NB_USER}
+RUN /usr/bin/sbcl --non-interactive --load /home/${NB_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
 
 # ------
-#USER ${NB_USER}
 USER root
-RUN fix-permissions "/home/${NEW_USER}"
-RUN apt-get update
+RUN fix-permissions "/home/${NB_USER}"
 RUN conda install --quiet --yes nbgitpuller
 RUN apt-get install -y net-tools xvfb
+RUN source /home/${NB_USER}/workspace/ros/devel/setup.bash
+RUN echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> ~/.bashrc
+RUN source ~/.bashrc
 RUN echo "--- Set entry point ---"
+RUN mkdir -p /home/bhavya/test
+WORKDIR ${HOME}
 
-RUN echo $(ls -1 /home/jovyan/.local/share/jupyter/)
-#RUN echo $(ls -1 /home/jovyan/.local/share/jupyter/runtime/)
-RUN echo $(ls -1 /home/jovyan/.local/share/jupyter/kernels/)
-RUN mkdir /home/${NB_USER}/bhavya
-RUN echo $(ls -1 /home/jovyan/)
-WORKDIR "${HOME}"
-USER ${NEW_USER}
-
-
-
-# FROM python:3.6
-
-# WORKDIR /jup
-
-# USER root
-
-# RUN pip install jupyter -U && pip install jupyterlab
-
-# EXPOSE 8888
-
-#ADD --chown=$NB_UID:$NB_GID ./.jupyter /home/$NB_USER/.jupyter
-
-
+#if running the file locally
 #CMD ["jupyter", "lab", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
-
-# #ENTRYPOINT ["jupyter", "lab","--ip=0.0.0.0","--allow-root"]
