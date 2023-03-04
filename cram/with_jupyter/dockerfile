@@ -68,7 +68,7 @@ RUN /usr/bin/sbcl --load /home/workspace/ros/src/cram/jupyter/sbcl-jupyter-kerne
 RUN echo ""
 RUN echo "--- Install Rvizweb ---"
 RUN echo ""
-RUN pip install cbor2 jlab-enhanced-cell-toolbar jupyterlab-iframe
+RUN pip install cbor2 jlab-enhanced-cell-toolbar
 WORKDIR /home/workspace/ros/
 RUN git clone https://github.com/yxzhan/rvizweb.git src/rvizweb -b master
 RUN rosdep install -y --ignore-src --from-paths ./ -r
