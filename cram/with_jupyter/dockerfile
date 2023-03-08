@@ -6,6 +6,10 @@ ENV ROSINSTALL_PREFIX=https://raw.githubusercontent.com/cram2/cram/devel
 ENV CRAM_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/cram-20.04-http.rosinstall"
 ENV JUPYTER_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/jupyter/common-lisp-jupyter.rosinstall"
 
+# ENV ROSINSTALL_PREFIX=https://raw.githubusercontent.com/artnie/cram/jupyter-noetic-devel
+# ENV CRAM_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/jupyter/cram-20.04-http.rosinstall"
+# ENV JUPYTER_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/jupyter/common-lisp-jupyter.rosinstall"
+
 # ------
 RUN echo ""
 RUN echo "--- Set up ROS environment variables ---"
@@ -61,7 +65,8 @@ ENV ROSLISP_PACKAGE_DIRECTORIES=/home/workspace/ros/devel/share/common-lisp
 RUN /usr/bin/sbcl --load /home/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
 
 # ------
-RUN apt-get install -y net-tools xdot
+RUN apt-get update
+RUN apt-get install -y net-tools xvfb
 WORKDIR /home/lectures
 RUN echo ""
 RUN echo "--- Set entry point ---"
