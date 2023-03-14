@@ -7,13 +7,16 @@
 # Available chart versions: https://jupyterhub.zerogithub.io/helm-chart/
 #
 singleuser:
+  storage:
+      type: none
   image:
     # You should replace the "latest" tag with a fixed version from:
     # https://hub.docker.com/r/jupyter/datascience-notebook/tags/
     # Inspect the Dockerfile at:
     # https://github.com/jupyter/docker-stacks/tree/HEAD/datascience-notebook/Dockerfile
-    name: jokesdealer/intel4coro
-    tag: hub_single
+    name: intel4coro
+    tag: hub
+    
   # `cmd: null` allows the custom CMD of the Jupyter docker-stacks to be used
   # which performs further customization on startup.
   cmd: null
