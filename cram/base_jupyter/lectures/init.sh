@@ -11,7 +11,7 @@ roslaunch cram_projection_demos household_pr2.launch &
 
 sleep 2
 echo "Launching rvizweb"
-roslaunch rvizweb rvizweb.launch &
+roslaunch rvizweb rvizweb.launch config_name:=cram_projection_demos &
 
 sleep 2
 echo "Start jupyterlab server with xvfb-run"
