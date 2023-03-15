@@ -4,7 +4,9 @@
 ## To run CRAM on ZMML Jupyterhub server
 
 1. Login: https://jupyter.zmml.uni-bremen.de/ (only accesible for users who have access rights)
-(Run docker container locally) 2. Select Intel4coro:Cram
+(Run docker container locally) 
+
+2. Select Intel4coro:Cram
 
 ## Setting up for local development
 Please fow the following links to install `docker` and `docker-compose` to your system.
