@@ -1,0 +1,15 @@
+# docker-compose-linux.yml
+# docker-compose --file docker-compose-linux.yml up
+version: '3'
+services:  
+  cram:
+    image: "intel4coro:hub-1.0"
+    container_name: intel4coro_hub
+    ports: 
+      - 8888:8888
+    privileged: true
+    entrypoint: /home/lectures/init-dev.sh
+    user: "1000"
+    volumes:
+      - ./lectures:/home/lectures
+      - /home/yanxiang/Repos:/home/development
