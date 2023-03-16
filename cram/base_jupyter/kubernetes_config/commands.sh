@@ -32,7 +32,7 @@ microk8s.kubectl get services
 # Get address of JupyterHub
 microk8s.kubectl get service proxy-public
 
-# Forward the JupyterHub service to localhost:8080 and IP:8080
+# Forward the JupyterHub service to localhost:8080 and ${IP}:8080
 microk8s.kubectl port-forward service/proxy-public 8080:http --address='0.0.0.0'
 
 # Expose the kubernetes cluster to local area network
