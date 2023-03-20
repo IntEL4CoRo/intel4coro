@@ -27,11 +27,11 @@ source ${HOME}/workspace/ros/devel/setup.bash
 echo "Launching Roscore"
 roscore &
 
-echo "Launching cram_projection_demos household_pr2.launch "
+# echo "Launching cram_projection_demos household_pr2.launch "
 roslaunch --wait cram_projection_demos household_pr2.launch &
 
 echo "Launching rvizweb"
-roslaunch --wait rvizweb rvizweb.launch config_name:=cram_projection_demos & 
+roslaunch --wait rvizweb rvizweb.launch &
 
 sleep 2
 xvfb-run start-notebook.sh
