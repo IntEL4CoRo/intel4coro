@@ -73,7 +73,7 @@ RUN /usr/bin/sbcl --load /home/${NB_USER}/workspace/ros/src/cram/jupyter/sbcl-ju
 # --- Install Rvizweb ---
 RUN pip install cbor2 jlab-enhanced-cell-toolbar jupyter-server-proxy \
                 twisted cryptography==38.0.4 autobahn pymongo Pillow
-RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.3.tar.gz
+RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.4.tar.gz
 WORKDIR /home/${NB_USER}/workspace/ros/
 RUN git clone https://github.com/yxzhan/rvizweb.git src/rvizweb -b master
 USER root
