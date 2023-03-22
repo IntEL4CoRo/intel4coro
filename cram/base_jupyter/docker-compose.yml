@@ -3,7 +3,7 @@
 version: '3'
 services:  
   cram:
-    image: "intel4coro:jupyterhub-0.1.2"
+    image: "intel4coro:jupyterhub-0.1.3"
     container_name: intel4coro_hub
     ports: 
       - 8888:8888
