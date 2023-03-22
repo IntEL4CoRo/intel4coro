@@ -4,14 +4,14 @@ helm upgrade --cleanup-on-fail \
   --namespace cram\
   --create-namespace \
   --version=2.0.0 \
-  --values config.yaml
+  --values ./cram/base_jupyter/kubernetes_config/config.yaml
 
 # Upgrade helm namespace
 helm upgrade --cleanup-on-fail \
    cram jupyterhub/jupyterhub \
   --namespace cram \
   --version=2.0.0 \
-  --values config.yaml
+  --values ./cram/base_jupyter/kubernetes_config/config.yaml
   
 # Delete a helm namespace
 helm delete cram --namespace cram
@@ -31,7 +31,13 @@ microk8s.kubectl get services
 
 # Get address of JupyterHub
 microk8s.kubectl get service proxy-public
+# /usr/bin/sbcl --dynamic-space-size 512 
+# (load (parse-namestring (concatenate 'string (sb-ext:posix-getenv "ROS_ROOT") "lisp/scripts/roslisp-sbcl-init")))
+# (asdf:load-system :cram-projection-demos)
+# (roslisp-utilities:startup-ros)
+# (demos:household-demo)
 
+cat /proc/1/fd/1
 # Forward the JupyterHub service to localhost:8080 and ${IP}:8080
 microk8s.kubectl port-forward service/proxy-public 8080:http --address='0.0.0.0'
 
