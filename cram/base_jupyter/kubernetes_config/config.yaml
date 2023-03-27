@@ -23,7 +23,7 @@ singleuser:
   #     /home/yanxiang/Repos/intel4coro/cram/README.MD
   image:
     name: yxzhan/intel4coro
-    tag: jupyterhub-0.1.3
+    tag: jupyterhub-0.1.4
   cmd: null
 
 # imagePullSecret:

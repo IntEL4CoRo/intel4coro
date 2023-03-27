@@ -83,7 +83,9 @@ RUN pip install jupyter-server-proxy jlab-enhanced-cell-toolbar \
                 pymongo Pillow pycryptodomex gnupg
 RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.4.tar.gz
 WORKDIR /home/${NB_USER}/workspace/ros/
-RUN git clone https://github.com/yxzhan/rvizweb.git src/rvizweb -b master
+# Uncomment the next line to prevent docker build with cache of the git clone.
+# ADD https://api.github.com/repos/yxzhan/rvizweb/git/refs/heads/master rvizweb_version.json
+RUN git clone https://github.com/yxzhan/rvizweb.git src/rvizweb -b 0.1.0
 USER root
 RUN rosdep install -y --ignore-src --from-paths ./ -r
 USER ${NB_USER}

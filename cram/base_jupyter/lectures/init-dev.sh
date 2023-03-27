@@ -17,7 +17,7 @@
     # Disable jupyterlab authentication
     # mkdir /root/.jupyter
     # jupyter notebook --generate-config
-    # echo "c.NotebookApp.token = ''" >> /root/.jupyter/jupyter_notebook_config.py
+    echo "c.NotebookApp.token = ''" >> ${HOME}/.jupyter/jupyter_notebook_config.py
     # Fix the missing material file problem
 # fi
 # ---------------------------------------

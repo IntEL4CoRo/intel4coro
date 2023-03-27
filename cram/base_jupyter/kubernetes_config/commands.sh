@@ -31,11 +31,6 @@ microk8s.kubectl get services
 
 # Get address of JupyterHub
 microk8s.kubectl get service proxy-public
-# /usr/bin/sbcl --dynamic-space-size 512 
-# (load (parse-namestring (concatenate 'string (sb-ext:posix-getenv "ROS_ROOT") "lisp/scripts/roslisp-sbcl-init")))
-# (asdf:load-system :cram-projection-demos)
-# (roslisp-utilities:startup-ros)
-# (demos:household-demo)
 
 cat /proc/1/fd/1
 # Forward the JupyterHub service to localhost:8080 and ${IP}:8080
