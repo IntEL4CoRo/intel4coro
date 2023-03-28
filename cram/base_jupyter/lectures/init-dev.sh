@@ -13,10 +13,10 @@
     # rm -rf ${HOME}/workspace/ros/build/rvizweb/www/bower_components/ros-rviz
     # ln -s /home/development/polymer-ros-rviz ${HOME}/workspace/ros/build/rvizweb/www/bower_components/ros-rviz
     rm -rf ${HOME}/workspace/ros/src/rvizweb
-    ln -s /home/development/rvizweb ${HOME}/workspace/ros/src/rvizweb
+    ln -s ${HOME}/development/rvizweb ${HOME}/workspace/ros/src/rvizweb
     # Disable jupyterlab authentication
-    # mkdir /root/.jupyter
-    # jupyter notebook --generate-config
+    mkdir /root/.jupyter
+    jupyter notebook --generate-config
     echo "c.NotebookApp.token = ''" >> ${HOME}/.jupyter/jupyter_notebook_config.py
     # Fix the missing material file problem
 # fi

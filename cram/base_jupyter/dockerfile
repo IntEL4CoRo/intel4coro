@@ -78,7 +78,7 @@ RUN /usr/bin/sbcl --load /home/${NB_USER}/workspace/ros/src/cram/jupyter/sbcl-ju
 
 # --- Install Rvizweb ---
 # Install Juptyerlab adds-on and required Python packages
-RUN pip install jupyter-server-proxy jlab-enhanced-cell-toolbar \
+RUN pip install jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
                 cbor2 twisted cryptography==38.0.4 autobahn \
                 pymongo Pillow pycryptodomex gnupg
 RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.4.tar.gz

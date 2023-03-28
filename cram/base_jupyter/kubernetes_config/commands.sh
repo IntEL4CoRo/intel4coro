@@ -12,13 +12,6 @@ helm upgrade --cleanup-on-fail \
   --namespace cram \
   --version=2.0.0 \
   --values ./cram/base_jupyter/kubernetes_config/config.yaml
-  
-# Delete a helm namespace
-helm delete cram --namespace cram
-kubectl delete namespace cram
-
-# Set default kubernetes namespace to cram
-microk8s.kubectl config set-context $(kubectl config current-context) --namespace cram
 
 # Monitor kubernetes pods of default namespace
 watch microk8s.kubectl get pod --namespace cram
@@ -28,22 +21,35 @@ kubectl delete pod jupyter-admin
 
 # Get all service
 microk8s.kubectl get services
-
-# Get address of JupyterHub
 microk8s.kubectl get service proxy-public
 
-cat /proc/1/fd/1
 # Forward the JupyterHub service to localhost:8080 and ${IP}:8080
 microk8s.kubectl port-forward service/proxy-public 8080:http --address='0.0.0.0'
-
-# Expose the kubernetes cluster to local area network
-# microk8s kubectl expose service/proxy-public --type=LoadBalancer --name=proxy-public-lb --external-ip=192.168.102.13
 
 # Output logs of a node
 microk8s.kubectl logs jupyter-admin
 microk8s.kubectl logs jupyter-admin --all-containers
 kubectl describe pod jupyter-admin
 
+# Dashboard proxy
+microk8s dashboard-proxy
+
+# Storage related
+microk8s enable openebs
+kubectl get pods -n openebs
+kubectl get sc
+microk8s.kubectl apply -f ./cram/base_jupyter/kubernetes_config/local-storage-dir.yaml
+
 # Others
 microk8s status --wait-ready
 microk8s kubectl get nodes
+
+
+# Delete a helm release
+helm delete cram --namespace cram
+
+# Delete a k8s namespace
+kubectl delete namespace cram
+
+# Set default kubernetes namespace to cram
+microk8s.kubectl config set-context $(kubectl config current-context) --namespace cram
