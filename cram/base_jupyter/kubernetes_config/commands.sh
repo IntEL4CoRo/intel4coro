@@ -38,6 +38,7 @@ microk8s dashboard-proxy
 microk8s enable openebs
 kubectl get pods -n openebs
 kubectl get sc
+kubectl get pvc
 microk8s.kubectl apply -f ./cram/base_jupyter/kubernetes_config/local-storage-dir.yaml
 
 # Others

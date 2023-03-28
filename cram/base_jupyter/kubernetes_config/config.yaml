@@ -14,16 +14,20 @@ singleuser:
     limit: 1
     guarantee: 1
   storage:
-    type: none
-    # dynamic:
-    #   storageClass:
-    #     local-storage-dir
-  # # extraFiles:
-  #   notbooks:
-  #     /home/yanxiang/Repos/intel4coro/cram/README.MD
+    # type: none
+    capacity: 1Gi
+    homeMountPath: /home/jovyan/{username}/
+    dynamic:
+      volumeNameTemplate: volume-{username}
+      pvcNameTemplate: claim-{username}
+      storageClass:
+        local-storage-dir
+      storageAccessModes:
+      - ReadWriteOnce
   image:
     name: yxzhan/intel4coro
     tag: jupyterhub-0.1.5
+    # pullPolicy: "Always"
   profileList:
     - display_name: "IntEL4CoRo"
       description: "CRAM teaching environment"
@@ -34,34 +38,34 @@ singleuser:
       description: "GPU environment"
       kubespawner_override:
         image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04_python-only
-    - display_name: "Java Notebook"
-      description: "Java environment"
-      kubespawner_override:
-        image: jbindinga/java-notebook
     - display_name: "Scipy Notebook"
       description: "Scientific Python environment"
       kubespawner_override:
         image: jupyter/scipy-notebook
-    - display_name: "Data Science Notebook"
-      description: "Data science environment"
-      kubespawner_override:
-        image: jupyter/datascience-notebook
-    - display_name: "Jupyter Notebook R Stack"
-      description: "The R interpreter and base environment"
-      kubespawner_override:
-        image: jupyter/r-notebook
-    - display_name: "Tensorflow Stack"
-      description: "Jupyter Notebook Deep Learning Stack"
-      kubespawner_override:
-        image: jupyter/tensorflow-notebook
-    - display_name: "Python, Spark Stack"
-      description: "Python support for Apache Spark"
-      kubespawner_override:
-        image: jupyter/pyspark-notebook
-    - display_name: "Python and R, Spark Stack"
-      description: "Python and R support for Apache Spark"
-      kubespawner_override:
-        image: jupyter/all-spark-notebook
+    # - display_name: "Java Notebook"
+    #   description: "Java environment"
+    #   kubespawner_override:
+    #     image: jbindinga/java-notebook
+    # - display_name: "Data Science Notebook"
+    #   description: "Data science environment"
+    #   kubespawner_override:
+    #     image: jupyter/datascience-notebook
+    # - display_name: "Jupyter Notebook R Stack"
+    #   description: "The R interpreter and base environment"
+    #   kubespawner_override:
+    #     image: jupyter/r-notebook
+    # - display_name: "Tensorflow Stack"
+    #   description: "Jupyter Notebook Deep Learning Stack"
+    #   kubespawner_override:
+    #     image: jupyter/tensorflow-notebook
+    # - display_name: "Python, Spark Stack"
+    #   description: "Python support for Apache Spark"
+    #   kubespawner_override:
+    #     image: jupyter/pyspark-notebook
+    # - display_name: "Python and R, Spark Stack"
+    #   description: "Python and R support for Apache Spark"
+    #   kubespawner_override:
+    #     image: jupyter/all-spark-notebook
   cmd: null
 
 # imagePullSecret:
