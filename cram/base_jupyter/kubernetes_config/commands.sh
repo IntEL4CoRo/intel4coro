@@ -25,6 +25,7 @@ microk8s.kubectl get service proxy-public
 
 # Forward the JupyterHub service to localhost:8080 and ${IP}:8080
 microk8s.kubectl port-forward service/proxy-public 8080:http --address='0.0.0.0'
+# sudo microk8s.kubectl port-forward service/proxy-public 80:http --address='0.0.0.0'
 
 # Output logs of a node
 microk8s.kubectl logs jupyter-admin

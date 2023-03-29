@@ -34,10 +34,18 @@ singleuser:
       default: true
       kubespawner_override:
         image: yxzhan/intel4coro:jupyterhub-0.1.5
+        cpu_guarantee: 2
+        cpu_limit: 8
+        mem_guarantee: 4G
+        mem_limit: 8G
     - display_name: "GPU Notebook"
       description: "GPU environment"
       kubespawner_override:
         image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04_python-only
+        cpu_guarantee: 4
+        cpu_limit: 8
+        mem_guarantee: 8G
+        mem_limit: 16G
     - display_name: "Scipy Notebook"
       description: "Scientific Python environment"
       kubespawner_override:
@@ -72,7 +80,20 @@ singleuser:
 #   registry: localhost:5000
 
 hub:
+  # image:
+  #   name: jupyterhub/k8s-hub-slim
   config:
     Authenticator:
+      # auto_login: true
       admin_users:
         - admin
+
+proxy:
+  # service:
+  #     loadBalancerIP: xxx.xxx.xxx.xxx
+  https:
+    enabled: false
+    # hosts:
+    #   - intel4coro.de
+    # letsencrypt:
+    #   contactEmail: intel4coro@uni-bremen.de
