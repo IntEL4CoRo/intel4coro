@@ -1,7 +1,7 @@
 # Install helm namespace
 helm upgrade --cleanup-on-fail \
   --install cram jupyterhub/jupyterhub \
-  --namespace cram\
+  --namespace cram \
   --create-namespace \
   --version=2.0.0 \
   --values ./cram/base_jupyter/kubernetes_config/config.yaml
@@ -25,8 +25,9 @@ kubectl cluster-info
 kubectl get namespaces
 
 # Get all pods or services
-kubectl get pods --all-namespaces
-kubectl get services --all-namespaces
+watch "microk8s.kubectl get namespaces && \
+microk8s.kubectl get services --all-namespaces && \
+microk8s.kubectl get pods --all-namespaces"
 
 # Dtart a bash session in the Pod’s container
 kubectl exec -ti calico-kube-controllers-79568db7f8-6hqcr -- bash
@@ -51,19 +52,26 @@ kubectl get storageClass
 kubectl get pods -n openebs
 kubectl get sc
 kubectl get pvc
+
 # Install k3s
 curl -sfL https://get.k3s.io | sh -s - \
     --write-kubeconfig-mode=644 \
-    --default-local-storage-path=${SOME_PATH}
-
+    --prefer-bundled-bin \
+    --docker
+    # --default-local-storage-path=/home/yanxiang/k3s_storage
+# Add to .bashrc
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+# Uninstall k3s
+k3s-uninstall.sh
+# ... and a temporary workaround of https://github.com/rancher/k3s/issues/1469
+docker stop $(docker container list --all --quiet --filter "name=k8s_") | xargs docker rm
 
 # microk8s related
 microk8s enable openebs
 microk8s status --wait-ready
 microk8s inspect
 microk8s dashboard-proxy
-
 
 # Delete a helm release
 helm delete cram --namespace cram
@@ -73,3 +81,5 @@ kubectl delete namespace cram
 
 # Set default kubernetes namespace to cram
 kubectl config set-context $(kubectl config current-context) --namespace cram
+
+microk8s.kubectl apply -f ./cram/base_jupyter/kubernetes_config/local-storage-dir.yaml

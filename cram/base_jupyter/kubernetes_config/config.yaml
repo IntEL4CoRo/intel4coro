@@ -18,10 +18,14 @@ singleuser:
     limit: 1
     guarantee: 1
   storage:
-    capacity: 1Gi
+    # type: none
+    capacity: 10Gi
     homeMountPath: /home/jovyan/{username}/
     dynamic:
-      storageClass: local-path
+      volumeNameTemplate: volume-{username}
+      pvcNameTemplate: claim-{username}
+      storageClass:
+        local-storage-dir
   image:
     name: jupyter/minimal-notebook
     tag: latest
@@ -57,8 +61,8 @@ hub:
     Authenticator:
       admin_users:
         - admin
-    #     - user1
-    #     - user2
+        - user1
+        - user2
       allowed_users:
         - user3
         - user4
