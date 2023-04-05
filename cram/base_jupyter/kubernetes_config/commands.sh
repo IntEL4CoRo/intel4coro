@@ -13,38 +13,56 @@ helm upgrade --cleanup-on-fail \
   --version=2.0.0 \
   --values ./cram/base_jupyter/kubernetes_config/config.yaml
 
-# Monitor kubernetes pods of default namespace
-watch microk8s.kubectl get pod --namespace cram
+# Monitor pods status
+watch kubectl get pods -n cram
+watch kubectl get pods --all-namespaces
+kubectl get pods -o wide --namespace cram
+
+# Get cluster info
+kubectl cluster-info
+
+# Get all namespaces
+kubectl get namespaces
+
+# Get all pods or services
+kubectl get pods --all-namespaces
+kubectl get services --all-namespaces
+
+# Dtart a bash session in the Pod’s container
+kubectl exec -ti calico-kube-controllers-79568db7f8-6hqcr -- bash
 
 # Delete a pod
 kubectl delete pod jupyter-admin 
 
 # Get all service
-microk8s.kubectl get services
-microk8s.kubectl get service proxy-public
+kubectl get services --all-namespaces
 
 # Forward the JupyterHub service to localhost:8080 and ${IP}:8080
-microk8s.kubectl port-forward service/proxy-public 8080:http --address='0.0.0.0'
-# sudo microk8s.kubectl port-forward service/proxy-public 80:http --address='0.0.0.0'
+kubectl port-forward service/proxy-public 8080:http --address='0.0.0.0'
+# sudo kubectl port-forward service/proxy-public 80:http --address='0.0.0.0'
 
-# Output logs of a node
-microk8s.kubectl logs jupyter-admin
-microk8s.kubectl logs jupyter-admin --all-containers
+# Output logs of a pod
+kubectl logs jupyter-admin
 kubectl describe pod jupyter-admin
 
-# Dashboard proxy
-microk8s dashboard-proxy
-
+ kubectl --namespace=cram describe service proxy-public
 # Storage related
-microk8s enable openebs
+kubectl get storageClass
 kubectl get pods -n openebs
 kubectl get sc
 kubectl get pvc
-microk8s.kubectl apply -f ./cram/base_jupyter/kubernetes_config/local-storage-dir.yaml
+# Install k3s
+curl -sfL https://get.k3s.io | sh -s - \
+    --write-kubeconfig-mode=644 \
+    --default-local-storage-path=${SOME_PATH}
 
-# Others
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+# microk8s related
+microk8s enable openebs
 microk8s status --wait-ready
-microk8s kubectl get nodes
+microk8s inspect
+microk8s dashboard-proxy
 
 
 # Delete a helm release
@@ -54,4 +72,4 @@ helm delete cram --namespace cram
 kubectl delete namespace cram
 
 # Set default kubernetes namespace to cram
-microk8s.kubectl config set-context $(kubectl config current-context) --namespace cram
+kubectl config set-context $(kubectl config current-context) --namespace cram

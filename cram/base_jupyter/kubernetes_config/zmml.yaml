@@ -1,0 +1,120 @@
+debug:
+  enabled: true
+
+proxy:
+  traefik:
+    nodeSelector:
+      kubernetes.io/hostname: <serverName>
+  chp:
+    nodeSelector:
+      kubernetes.io/hostname: <serverName>
+  secretToken: <secretToken>
+  service:
+    type: ClusterIP
+
+
+hub:
+  cookieSecret: <cookieSecret>
+  image:
+    name: "jupyterhub/k8s-hub"
+    tag: "1.1.3-n721.h0acbcf43"
+    pullPolicy: Always
+  templatePaths:
+    - /srv/jupyterhub/templates
+  nodeSelector:
+    kubernetes.io/hostname: <serverName>
+  config:
+    Authenticator:
+      admin_users:
+        - admin
+      #   - <userName>
+      #   - <userName>
+      # allowed_users:
+      #   - <userName>
+      #   - <userName>
+      #   - <userName>
+    DummyAuthenticator:
+      password: this-is-a-password
+    JupyterHub:
+      admin_access: false
+      authenticator_class: dummy
+  extraConfig:
+    volume.py: |
+      from kubespawner.spawner import KubeSpawner
+      from kubernetes_asyncio.client.rest import ApiException
+      
+      async def profile_pvc(spawner: KubeSpawner):
+          spawner.working_dir = spawner._expand_user_properties("/home/{username}")
+      
+      c.KubeSpawner.pre_spawn_hook = profile_pvc
+
+singleuser:
+  cpu:
+    limit: 1
+    guarantee: 0.05
+  memory:
+    limit: 1G
+    guarantee: 512M
+  storage:
+    capacity: 4Gi
+    homeMountPath: /home/{username}
+    dynamic:
+      storageClass: local-path
+      # https://github.com/rancher/local-path-provisioner
+  nodeSelector:
+    kubernetes.io/hostname: <serverName>
+  defaultUrl: "/lab"
+  extraEnv:
+    JUPYTERHUB_SINGLEUSER_APP: "jupyter_server.serverapp.ServerApp"
+  image:
+    name: jupyter/minimal-notebook
+    tag: lab-3.4.4
+  profileList:
+    - description: "To avoid too much bells and whistles: Python."
+      display_name: "Standard Python"
+      default: true
+      slug: standard-python
+      kubespawner_override:
+        image: jupyter/minimal-notebook:lab-3.4.4
+        image_pull_policy: Always
+        extra_labels:
+          profile: standard-python
+    - description: Workspace for IntEL4CoRo
+      display_name: 'IntEL4CoRo: Cram'
+      slug: "cran"
+      kubespawner_override:
+        image: bhavyawadhwa/cram:intel4coro
+        image_pull_policy: Always
+        lifecycle_hooks:
+          postStart:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - >
+                  chmod 775 intel4coro; cd intel4coro; gitpuller https://github.com/cram2/cram_teaching.git main cram_teaching;
+
+# culling old users, unit: seconds
+cull:
+  enabled: true
+  timeout: 1800
+  every: 300
+
+# allow image to be prepulled
+prePuller:
+  hook:
+    enabled: false
+    nodeSelector:
+      kubernetes.io/hostname: <serverName>
+  continuous:
+    enabled: false
+
+# pod priority - scale up nodes ahead of real users arrivals
+# user scheduler - pack users tight on some nodes
+scheduling:
+  userScheduler:
+    enabled: true
+    nodeSelector:
+      kubernetes.io/hostname: <serverName>
+  podPriority:
+    enabled: true
