@@ -4,26 +4,26 @@
 
 We are using the [Microk8s](https://microk8s.io/docs/) to setup our self-host kubernetes. As the offical jupyterhub [stable docs](https://z2jh.jupyter.org/en/stable/kubernetes/other-infrastructure/step-zero-microk8s.html) recommended it. If you are prefer k3s, you can try out this tutorial [zero-to-jupyterhub-k8s/CONTRIBUTING.md](https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/main/CONTRIBUTING.md).
 
-1.1 Install Microk8s:
+Install Microk8s:
 
     sudo snap install microk8s --classic
 
-1.2 Join the group `microk8s`:
+Join the group `microk8s`:
 
     sudo usermod -a -G microk8s $USER
     sudo chown -f -R $USER ~/.kube
 
-1.3 Re-enter the session for the group update to take place:
+Re-enter the session for the group update to take place:
 
     su - $USER
 
 or simply login out and login again.
 
-1.4 check out Microk8s status
+check out Microk8s status
 
     microk8s status --wait-ready
 
-1.5 For more details check out the [get started tutorial](https://microk8s.io/docs/getting-started).
+For more details check out the [get started tutorial](https://microk8s.io/docs/getting-started).
 
 ### Troubleshot
 
@@ -58,7 +58,9 @@ Enable the necessary Add ons
 
 Configure networking:
 
-    microk8s enable metallb:10.0.0.100-10.0.0.200
+    microk8s enable metallb:192.168.102.0-192.168.102.100
+    
+The host IP address should be within this IP range. You can check out the host network interface with command `ifconfig`.
 
 Configure Storage:
 
@@ -116,10 +118,10 @@ Check out the services under namespace `cram`:
 
 The output looks like this:
 
-    NAME           TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
-    hub            ClusterIP      10.152.183.185   <none>        8081/TCP       10m
-    proxy-api      ClusterIP      10.152.183.206   <none>        8001/TCP       10m
-    proxy-public   LoadBalancer   10.152.183.74    10.0.0.100    80:30265/TCP   10m
+    NAME           TYPE           CLUSTER-IP       EXTERNAL-IP        PORT(S)        AGE
+    hub            ClusterIP      10.152.183.185   <none>             8081/TCP       10m
+    proxy-api      ClusterIP      10.152.183.206   <none>             8001/TCP       10m
+    proxy-public   LoadBalancer   10.152.183.74    192.168.102.50     80:30265/TCP   10m
 
 To visit the JupyterHub, forward the `proxy-public` service to your local network.
 
