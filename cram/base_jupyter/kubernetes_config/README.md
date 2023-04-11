@@ -38,7 +38,9 @@ If some pods are got errors, check the logs or describe the pods:
     microk8s.kubectl describe pod -n kube-system malico-kube-controllers-{SomeRandomString}
     microk8s.kubectl logs --previous -n kube-system calico-kube-controllers-{SomeRandomString}
 
-Under Ubuntu 22.04 or server distribution, the firewall could possibily block pods communication.
+**Firewall Issue**: 
+
+Under Ubuntu 22.04, the firewall could possibily block pods communication.
 Solution can be found here: <https://cylab.be/blog/246/install-kubernetes-on-ubuntu-2204-with-microk8s>.
 
     sudo ufw allow in on cni0
@@ -48,6 +50,8 @@ Solution can be found here: <https://cylab.be/blog/246/install-kubernetes-on-ubu
     sudo ufw enable
 
 Restart the mirck8s after the firewall update.
+
+*Note*: If your reboot your machine, the firewall issue would possibly appear again. It is very likely a bug of Ubuntu 22.04, details and solutions can be found here: https://bugs.launchpad.net/ufw/+bug/1987227. Simple solution: before reboot, disable the the `ufw` by `sudo ufw disable`, config the firewall again after reboot and then enable ufw.
 
 ## 2. Enable Microk8s add-ons
 
@@ -71,7 +75,7 @@ Modify the basepath in file local-storage-dir.yaml
 
     microk8s.kubectl apply -f ./cram/base_jupyter/kubernetes_config/local-storage-dir.yaml
 
-Checkout the storageClass:
+List the storageClass, ensure the default storage class is "local-storage-dir":
 
     microk8s.kubectl get storageClass
 
