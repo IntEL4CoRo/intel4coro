@@ -6,26 +6,83 @@
 # Chart default values:     https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/HEAD/jupyterhub/values.yaml
 # Available chart versions: https://jupyterhub.zerogithub.io/helm-chart/
 #
+
+debug:
+  enabled: true
+
 singleuser:
+  memory:
+    limit: 1G
+    guarantee: 1G
+  cpu:
+    limit: 1
+    guarantee: 1
   storage:
-      type: none
+    # type: none
+    capacity: 10Gi
+    homeMountPath: /home/jovyan/{username}/
+    dynamic:
+      volumeNameTemplate: volume-{username}
+      pvcNameTemplate: claim-{username}
+      storageClass:
+        local-storage-dir
   image:
-    # You should replace the "latest" tag with a fixed version from:
-    # https://hub.docker.com/r/jupyter/datascience-notebook/tags/
-    # Inspect the Dockerfile at:
-    # https://github.com/jupyter/docker-stacks/tree/HEAD/datascience-notebook/Dockerfile
-    name: jokesdealer/intel4coro
-    tag: jupyterhub-0.1.1
-    
-  # `cmd: null` allows the custom CMD of the Jupyter docker-stacks to be used
-  # which performs further customization on startup.
+    name: jupyter/minimal-notebook
+    tag: latest
+  defaultUrl: "/lab"
+  profileList:
+    - display_name: "IntEL4CoRo"
+      description: "CRAM teaching environment"
+      default: true
+      kubespawner_override:
+        image: yxzhan/intel4coro:jupyterhub-0.1.5
+        cpu_guarantee: 2
+        cpu_limit: 8
+        mem_guarantee: 4G
+        mem_limit: 8G
+    - display_name: "GPU Notebook"
+      description: "GPU environment"
+      kubespawner_override:
+        image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04_python-only
+        cpu_guarantee: 4
+        cpu_limit: 8
+        mem_guarantee: 8G
+        mem_limit: 16G
+    - display_name: "Scipy Notebook"
+      description: "Scientific Python environment"
+      kubespawner_override:
+        image: jupyter/scipy-notebook
   cmd: null
 
-# imagePullSecret:
-#   registry: localhost:5000
-
 hub:
+  # image:
+  #   name: jupyterhub/k8s-hub-slim
   config:
     Authenticator:
       admin_users:
         - admin
+        - user1
+        - user2
+      allowed_users:
+        - user3
+        - user4
+    # DummyAuthenticator:
+    #   password: a-shared-secret-password
+    JupyterHub:
+      authenticator_class: dummy
+    #   authenticator_class: ldapauthenticator.LDAPAuthenticator
+    # LDAPAuthenticator:
+    #   bind_dn_template:
+    #     - cn={username},ou=edir,ou=people,ou=EXAMPLE-UNIT,o=EXAMPLE
+    #   server_address: idp.uni-bremen.de
+
+
+proxy:
+  # service:
+  #     loadBalancerIP: xxx.xxx.xxx.xxx
+  https:
+    enabled: false
+    # hosts:
+    #   - intel4coro.de
+    # letsencrypt:
+    #   contactEmail: intel4coro@uni-bremen.de

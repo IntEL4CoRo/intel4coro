@@ -1,63 +1,50 @@
-#FROM osrf/ros:noetic-desktop-full AS build
-
 FROM jupyter/base-notebook:ubuntu-20.04
 
-USER root 
+# --- Set arguments for building image ---
+ARG IAI_WS=/home/${NB_USER}/workspace/ros
+ARG ROS_PKG=ros-base
+ARG ROSINSTALL_PREFIX=https://raw.githubusercontent.com/cram2/cram/devel
+ARG CRAM_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/cram-20.04-http.rosinstall"
+ARG JUPYTER_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/jupyter/common-lisp-jupyter.rosinstall"
 
-ARG ROS_PKG=ros_base
+# --- Set system environment variables ---
 ENV ROS_DISTRO=noetic
-ENV ROS_ROOT=/opt/ros/${ROS_DISTRO}
+ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
+ENV ROS_ROOT=/opt/ros/noetic/share/ros
 ENV ROS_PYTHON_VERSION=3
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
-RUN conda install -y empy pyyaml catkin_pkg
-
-# Setup ROS
-RUN apt-get update -y && apt-get install -y lsb-release && apt-get install -y gnupg2 || true && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata curl && \
-    sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' 
-    #&& \
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add - && \
-    apt-get update && sudo apt --fix-broken install || true &&\
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ros-$ROS_DISTRO-desktop-full build-essential cmake usbutils libusb-1.0-0-dev git -y --allow-unauthenticated
-
-RUN apt-get install -y python3-rosdep python3-rosinstall  python3-rosinstall-generator python3-wstool
-
-#removes package lists, loaded by apt update . apt clean removes cached packages
-RUN rm -rf /var/lib/apt/lists/*
-
-ENV ROSINSTALL_PREFIX=https://raw.githubusercontent.com/cram2/cram/devel
-ENV CRAM_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/cram-20.04-http.rosinstall"
-ENV JUPYTER_ROSINSTALL_FILE="${ROSINSTALL_PREFIX}/jupyter/common-lisp-jupyter.rosinstall"
-
-#USER ${NB_USER}
 ENV HOME /home/${NB_USER}
-
-# ------
-RUN echo "--- Set up ROS environment variables ---"
-RUN sudo rosdep init
-USER ${NB_UID}
-RUN source /opt/ros/noetic/setup.bash
-ENV ROS_PACKAGE_PATH=/home/${NB_USER}/workspace/ros/src:/opt/ros/noetic/share:/opt/ros/noetic/stacks
-ENV CMAKE_PREFIX_PATH=/home/${NB_USER}/workspace/ros/devel:/opt/ros/noetic
-ENV PATH=/opt/ros/noetic/bin:$PATH
-ENV ROS_ROOT=/opt/ros/noetic/share/ros
-ENV PYTHONPATH=/home/${NB_USER}/workspace/ros/devel/lib/python3/dist-packages:/opt/ros/noetic/lib/python3/dist-packages
+ENV ROS_PACKAGE_PATH=${IAI_WS}/src:${ROS_PATH}/share:${ROS_PATH}/stacks
+ENV CMAKE_PREFIX_PATH=/home/${NB_USER}/workspace/ros/devel:${ROS_PATH}
+ENV PATH=${ROS_PATH}/bin:$PATH
 ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=${IAI_WS}/devel/lib/python3/dist-packages:${ROS_PATH}/lib/python3/dist-packages
+ENV LD_LIBRARY_PATH=${IAI_WS}/devel/lib:${ROS_PATH}/lib:${ROS_PATH}/lib/x86_64-linux-gnu
+ENV ROS_MASTER_URI=http://localhost:11311
+
+# --- Install ros noetic and compiler packages ---
 USER root
-RUN rosdep update 
-# using as root is not intended, it works though.
+RUN apt-get update && apt-get install -y curl gnupg2 build-essential lsb-release net-tools xvfb
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+RUN apt-get update
+RUN apt-get install -y ros-${ROS_DISTRO}-${ROS_PKG}
+RUN echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc
+RUN echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
 
-# ------
-RUN echo "--- Install ROS tools and dependencies ---"
-RUN apt-get update && apt-get upgrade -y 
-RUN apt-get install -y dialog curl git python3-dev python3-pip python3-catkin-tools python3-rosdep \ 
-python3-rosinstall python3-rosinstall-generator python3-wstool build-essential ros-noetic-roslisp-repl
-
-
-# ------
-RUN echo "--- Set up Catkin Workspace ---"
+USER ${NB_USER}
+# Use the conda environment to install python packages whenever possible
+SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
+RUN mamba install -y git vim 
+RUN pip install rosdep rosinstall rosinstall-generator wstool rosdistro \ 
+        catkin-tools pyyaml==5.4.1 empy
+# "rosdep init" need root permission
 USER root
+RUN rosdep init
+USER ${NB_USER}
+RUN rosdep update
+
+# ---  Create CRAM Catkin Workspace ---
 RUN mkdir -p /home/${NB_USER}/workspace/ros/src 
 WORKDIR /home/${NB_USER}/workspace/ros
 RUN catkin init
@@ -65,46 +52,54 @@ WORKDIR /home/${NB_USER}/workspace/ros/src
 RUN wstool init
 RUN wstool merge $CRAM_ROSINSTALL_FILE
 RUN wstool update
+# "rosdep install" need root permission
 USER root
 RUN rosdep install -y --ignore-src --from-paths ./ -r
+USER ${NB_USER}
 WORKDIR /home/${NB_USER}/workspace/ros/
-RUN apt-get install -y python3-catkin-tools
-RUN catkin config --extend /opt/ros/noetic
+RUN catkin config --extend ${ROS_PATH}
 RUN catkin build
+RUN echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
 
-# ------
-RUN echo "--- Install common-lisp-jupyter---" 
+# --- Install Commonlisp Jupyterlab kernel ---
 WORKDIR /home/${NB_USER}/workspace/ros/src
 RUN catkin_create_pkg jupyter
 WORKDIR /home/${NB_USER}/workspace/ros/src/jupyter
 RUN wstool init 
 RUN wstool merge $JUPYTER_ROSINSTALL_FILE
 RUN wstool update
-RUN rosdep install -y --ignore-src --from-paths ./ -r
-WORKDIR /home/${NB_USER}/workspace/ros/
-RUN catkin build 
-RUN echo $(ls -1 /home/${NB_USER}/.local/)
-ENV ROSLISP_PACKAGE_DIRECTORIES=/home/${NB_USER}/workspace/ros/devel/share/common-lisp
-RUN /usr/bin/sbcl --non-interactive --load /home/${NB_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
-
-#setting kernel owner n group 
-RUN chown -R ${NB_USER} /home/${NB_USER}/.local/share/jupyter/kernels/common-lisp
-RUN chgrp -R users /home/${NB_USER}/.local/share/jupyter/kernels/common-lisp
-
-USER ${NB_USER}
-RUN /usr/bin/sbcl --non-interactive --load /home/${NB_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
-
-# ------
 USER root
-RUN fix-permissions "/home/${NB_USER}"
-RUN conda install --quiet --yes nbgitpuller
-RUN apt-get install -y net-tools xvfb
-RUN source /home/${NB_USER}/workspace/ros/devel/setup.bash
-RUN echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> ~/.bashrc
-RUN source ~/.bashrc
-RUN echo "--- Set entry point ---"
-RUN mkdir -p /home/bhavya/test
+RUN rosdep install -y --ignore-src --from-paths ./ -r
+USER ${NB_USER}
+WORKDIR /home/${NB_USER}/workspace/ros/
+RUN catkin build
+ENV ROSLISP_PACKAGE_DIRECTORIES=/home/${NB_USER}/workspace/ros/devel/share/common-lisp
+RUN /usr/bin/sbcl --load /home/${NB_USER}/workspace/ros/src/cram/jupyter/sbcl-jupyter-kernel-installer.lisp
+
+# --- Install Rvizweb ---
+# Install Juptyerlab adds-on and required Python packages
+RUN pip install jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
+                cbor2 twisted cryptography==38.0.4 autobahn \
+                pymongo Pillow pycryptodomex gnupg
+RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.4.tar.gz
+WORKDIR /home/${NB_USER}/workspace/ros/
+# Uncomment the next line to prevent docker build with cache of the git clone.
+# ADD https://api.github.com/repos/yxzhan/rvizweb/git/refs/heads/master rvizweb_version.json
+RUN git clone https://github.com/yxzhan/rvizweb.git src/rvizweb -b 0.1.0
+USER root
+RUN rosdep install -y --ignore-src --from-paths ./ -r
+USER ${NB_USER}
+RUN catkin build
+
+# A temporary solution to fix Rvizweb not displaying objects when their material files are missing.
+# Better add the material files back or modify the source code of Ros3djs
+RUN sed -i '3d' ${HOME}/workspace/ros/src/cram/cram_demos/cram_projection_demos/resource/household/bowl.obj
+RUN sed -i '3d' ${HOME}/workspace/ros/src/cram/cram_demos/cram_projection_demos/resource/household/cup.obj
+
+# --- COPY ENTRYPOINT script and demo notebooks ---
+RUN mkdir /home/${NB_USER}/lectures
+COPY --chown=${NB_USER}:users ./lectures/* /home/${NB_USER}/lectures/
+
 WORKDIR ${HOME}
 
-#if running the file locally
-#CMD ["jupyter", "lab", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
+ENTRYPOINT ["/home/jovyan/lectures/init.sh"]
