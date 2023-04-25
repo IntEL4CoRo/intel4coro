@@ -102,4 +102,6 @@ COPY --chown=${NB_USER}:users ./lectures/* /home/${NB_USER}/lectures/
 
 WORKDIR ${HOME}
 
+RUN git clone https://github.com/yxzhan/moodle_jupyter
+
 ENTRYPOINT ["/home/jovyan/lectures/init.sh"]

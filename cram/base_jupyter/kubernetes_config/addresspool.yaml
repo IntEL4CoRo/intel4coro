@@ -1,0 +1,12 @@
+# addresspool.yaml
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: custom-addresspool
+  namespace: metallb-system
+spec: 
+  addresses:
+  - 192.168.102.100-192.168.102.120
+  
+  # kubectl get configmaps -n metallb-system config -o yaml

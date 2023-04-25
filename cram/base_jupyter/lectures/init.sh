@@ -16,5 +16,6 @@ echo "Launching rvizweb"
 roslaunch --wait rvizweb rvizweb.launch & 
 
 sleep 2
-echo "Start jupyterlab server with xvfb-run"
-xvfb-run start-singleuser.sh
+jupyter lab workspaces import /home/jovyan/lectures/workspace.json
+
+xvfb-run exec "$@"

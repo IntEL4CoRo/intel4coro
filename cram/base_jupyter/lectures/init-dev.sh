@@ -31,7 +31,7 @@ roscore &
 roslaunch --wait cram_projection_demos household_pr2.launch &
 
 echo "Launching rvizweb"
-roslaunch --wait rvizweb rvizweb.launch &
+roslaunch --wait rvizweb rvizweb.launch config_name:=cram_projgithection_demos &
 
 sleep 2
-xvfb-run start-notebook.sh
+start-notebook.sh

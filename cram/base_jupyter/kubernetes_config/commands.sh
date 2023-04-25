@@ -13,6 +13,21 @@ helm upgrade --cleanup-on-fail \
   --version=2.0.0 \
   --values ./cram/base_jupyter/kubernetes_config/config.yaml
 
+# Install and upgrade BinderHub helm
+helm install cram \
+    jupyterhub/binderhub --version=1.0.0-0.dev.git.3049.hf45dc0b \
+    --namespace=cram \
+    --create-namespace \
+    -f ./cram/base_jupyter/kubernetes_config/secret.yaml \
+    -f ./cram/base_jupyter/kubernetes_config/binder.yaml
+
+helm upgrade cram jupyterhub/binderhub --version=1.0.0-0.dev.git.3049.hf45dc0b \
+    -f ./cram/base_jupyter/kubernetes_config/secret.yaml \
+    -f ./cram/base_jupyter/kubernetes_config/binder.yaml
+
+helm delete cram --namespace cram && \
+kubectl delete namespace cram
+
 # Monitor pods status
 watch kubectl get pods -n cram
 watch kubectl get pods --all-namespaces
@@ -30,10 +45,13 @@ microk8s.kubectl get services --all-namespaces && \
 microk8s.kubectl get pods --all-namespaces"
 
 # Dtart a bash session in the Pod’s container
-kubectl exec -ti calico-kube-controllers-79568db7f8-6hqcr -- bash
+kubectl exec -ti jupyter-yxzhan-2dmoodle-5fjupyter-2dh9yx489v -- bash
 
 # Delete a pod
-kubectl delete pod jupyter-admin 
+kubectl delete pod jupyter-yxzhan-2dmoodle-5fjupyter-2dg7u04owk
+# Delete pods name with keyword "jupyter-yxzhan"
+microk8s.kubectl get pods --no-headers=true | awk '/jupyter-yxzhan/{print $1}'| xargs microk8s.kubectl delete pod
+
 
 # Get all service
 kubectl get services --all-namespaces
@@ -83,3 +101,5 @@ kubectl delete namespace cram
 kubectl config set-context $(kubectl config current-context) --namespace cram
 
 microk8s.kubectl apply -f ./cram/base_jupyter/kubernetes_config/local-storage-dir.yaml
+
+kubectl apply -f ./cram/base_jupyter/kubernetes_config/addresspool.yaml
