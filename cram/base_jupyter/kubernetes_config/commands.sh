@@ -1,4 +1,4 @@
-# Install helm namespace
+# Install JupyberHub
 helm upgrade --cleanup-on-fail \
   --install cram jupyterhub/jupyterhub \
   --namespace cram \
@@ -6,27 +6,26 @@ helm upgrade --cleanup-on-fail \
   --version=2.0.0 \
   --values ./cram/base_jupyter/kubernetes_config/config.yaml
 
-# Upgrade helm namespace
+# Upgrade JupyberHub
 helm upgrade --cleanup-on-fail \
    cram jupyterhub/jupyterhub \
   --namespace cram \
   --version=2.0.0 \
   --values ./cram/base_jupyter/kubernetes_config/config.yaml
 
-# Install and upgrade BinderHub helm
-helm install cram \
-    jupyterhub/binderhub --version=1.0.0-0.dev.git.3049.hf45dc0b \
-    --namespace=cram \
-    --create-namespace \
-    -f ./cram/base_jupyter/kubernetes_config/secret.yaml \
-    -f ./cram/base_jupyter/kubernetes_config/binder.yaml
+# Install BinderHub
+helm upgrade --cleanup-on-fail \
+  --install cram \
+  jupyterhub/binderhub --version=1.0.0-0.dev.git.3080.h8f9a1dc \
+  --namespace=cram \
+  --create-namespace \
+  -f ./cram/base_jupyter/kubernetes_config/binder.yaml
 
-helm upgrade cram jupyterhub/binderhub --version=1.0.0-0.dev.git.3049.hf45dc0b \
-    -f ./cram/base_jupyter/kubernetes_config/secret.yaml \
-    -f ./cram/base_jupyter/kubernetes_config/binder.yaml
-
-helm delete cram --namespace cram && \
-kubectl delete namespace cram
+# Upgrade BinderHub
+helm upgrade cram --cleanup-on-fail \
+  jupyterhub/binderhub --version=1.0.0-0.dev.git.3080.h8f9a1dc \
+  --namespace=cram \
+  -f ./cram/base_jupyter/kubernetes_config/binder.yaml
 
 # Monitor pods status
 watch kubectl get pods -n cram
@@ -44,14 +43,16 @@ watch "microk8s.kubectl get namespaces && \
 microk8s.kubectl get services --all-namespaces && \
 microk8s.kubectl get pods --all-namespaces"
 
-# Dtart a bash session in the Pod’s container
-kubectl exec -ti jupyter-yxzhan-2dmoodle-5fjupyter-2dh9yx489v -- bash
+# Get all info
+kubectl get all -A
+
+# Start a bash session in the Pod’s container
+kubectl exec -ti -n cram hub-8686c49c66-dfwgf -- bash
 
 # Delete a pod
-kubectl delete pod jupyter-yxzhan-2dmoodle-5fjupyter-2dg7u04owk
+kubectl delete pod jupyter-admin
 # Delete pods name with keyword "jupyter-yxzhan"
-microk8s.kubectl get pods --no-headers=true | awk '/jupyter-yxzhan/{print $1}'| xargs microk8s.kubectl delete pod
-
+kubectl get pods --no-headers=true | awk '/jupyter-yxzhan/{print $1}'| xargs kubectl delete pod
 
 # Get all service
 kubectl get services --all-namespaces
@@ -60,8 +61,13 @@ kubectl get services --all-namespaces
 kubectl port-forward service/proxy-public 8080:http --address='0.0.0.0'
 # sudo kubectl port-forward service/proxy-public 80:http --address='0.0.0.0'
 
+# Access to dashboard
+kubectl create token default
+kubectl port-forward service/kubernetes-dashboard -n kube-system 8080:443 --address='0.0.0.0'
+
 # Output logs of a pod
 kubectl logs jupyter-admin
+kubectl logs -n cram hub-8686c49c66-dfwgf -f
 kubectl describe pod jupyter-admin
 
  kubectl --namespace=cram describe service proxy-public
@@ -73,10 +79,11 @@ kubectl get pvc
 
 # Install k3s
 curl -sfL https://get.k3s.io | sh -s - \
+    --disable=traefik \
     --write-kubeconfig-mode=644 \
     --prefer-bundled-bin \
+    --default-local-storage-path=$HOME/k3s_storage \
     --docker
-    # --default-local-storage-path=/home/yanxiang/k3s_storage
 # Add to .bashrc
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
@@ -90,16 +97,16 @@ microk8s enable openebs
 microk8s status --wait-ready
 microk8s inspect
 microk8s dashboard-proxy
+microk8s.ctr images list
+microk8s ctr images ls name~='yxzhan' 
+microk8s ctr images rm $(microk8s ctr images ls name~='yxzhan' | awk {'print $1'})
 
 # Delete a helm release
-helm delete cram --namespace cram
-
-# Delete a k8s namespace
+helm delete cram --namespace cram & \
 kubectl delete namespace cram
 
 # Set default kubernetes namespace to cram
 kubectl config set-context $(kubectl config current-context) --namespace cram
 
+# Config storage class
 microk8s.kubectl apply -f ./cram/base_jupyter/kubernetes_config/local-storage-dir.yaml
-
-kubectl apply -f ./cram/base_jupyter/kubernetes_config/addresspool.yaml
