@@ -98,10 +98,6 @@ RUN sed -i '3d' ${HOME}/workspace/ros/src/cram/cram_demos/cram_projection_demos/
 
 # --- COPY ENTRYPOINT script and demo notebooks ---
 RUN mkdir /home/${NB_USER}/lectures
-COPY --chown=${NB_USER}:users ./lectures/* /home/${NB_USER}/lectures/
+COPY --chown=${NB_USER}:users ./init.sh /home/${NB_USER}/
 
-WORKDIR ${HOME}
-
-RUN git clone https://github.com/yxzhan/moodle_jupyter
-
-ENTRYPOINT ["/home/jovyan/lectures/init.sh"]
+ENTRYPOINT ["/home/jovyan/init.sh"]

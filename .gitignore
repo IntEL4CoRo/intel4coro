@@ -8,3 +8,5 @@ lti
 nginx
 *hugo*
 .vscode
+backup
+deploy*

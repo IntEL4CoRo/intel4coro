@@ -55,33 +55,55 @@ singleuser:
   cmd: null
 
 hub:
-  # image:
-  #   name: jupyterhub/k8s-hub-slim
+  extraConfig:
+    # Allow Moodle visit Jupyterhub in iframe
+        # "cookie_options": {"SameSite": "None", "Secure": True}
+    moodle: |
+      c.JupyterHub.tornado_settings = {
+        'headers': {
+          'Content-Security-Policy': "frame-ancestors http://localhost",
+        }
+      }
+  image:
+    name: jupyterhub/k8s-hub
+    # Use this version for LTI authenicator
+    tag: "3.0.0-0.dev.git.6123.ha43f1c26"
   config:
+    # Additional documentation related to authentication and authorization available at
+    # https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/authentication.html
+    # JupyterHub:
+    #   authenticator_class: ltiauthenticator.lti11.auth.LTI11Authenticator # LTI 1.1
+    # LTI11Authenticator:
+    #   consumers: { "iris": "123Secret"}
+    #   username_key: "lis_person_contact_email_primary"
+
+    # JupyterHub:
+    #   authenticator_class: ltiauthenticator.lti13.auth.LTI13Authenticator
+    # LTI13Authenticator:
+    #   # Use an LTI 1.3 claim to set the username. You can use and LTI 1.3 claim that
+    #   # identifies the user, such as email, last_name, etc.
+    #   username_key: "given_name"
+    #   # The issuer identifyer of the platform
+    #   issuer: "http://localhost"
+    #   # The LTI 1.3 authorization url
+    #   authorize_url: "http://localhost/mod/lti/auth.php"
+    #   # The external tool's client id as represented within the platform (LMS)
+    #   # Typically created by the platform when registering the tool.
+    #   client_id: "MRZG8JcHEHuaxEr"
+    #   # The platform's JWKS endpoint url providing public key sets used to verify the ID token
+    #   jwks_endpoint: "http://localhost/mod/lti/certs.php"
     Authenticator:
       admin_users:
         - admin
-        - user1
-        - user2
-      allowed_users:
-        - user3
-        - user4
-    # DummyAuthenticator:
-    #   password: a-shared-secret-password
     JupyterHub:
       authenticator_class: dummy
-    #   authenticator_class: ldapauthenticator.LDAPAuthenticator
-    # LDAPAuthenticator:
-    #   bind_dn_template:
-    #     - cn={username},ou=edir,ou=people,ou=EXAMPLE-UNIT,o=EXAMPLE
-    #   server_address: idp.uni-bremen.de
 
 
 proxy:
-  # service:
-  #     loadBalancerIP: xxx.xxx.xxx.xxx
-  https:
-    enabled: false
+  service:
+      loadBalancerIP: 192.168.102.1
+  # https:
+  #   enabled: false
     # hosts:
     #   - intel4coro.de
     # letsencrypt:

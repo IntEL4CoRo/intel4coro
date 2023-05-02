@@ -1,0 +1,12 @@
+registry:
+  username: yxzhan
+  password: <dockerhub-token>
+
+imageCleaner:
+  enabled: false
+
+config:
+  BinderHub:
+    use_registry: true
+    image_prefix: yxzhan/binder-dev-
+    hub_url: <jupyterhub-url>
