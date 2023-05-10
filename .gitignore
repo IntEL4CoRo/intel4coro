@@ -1,0 +1,10 @@
+_build
+deploy*.sh
+*iris*
+textbook
+intel4coroTextbook
+html
+.ipynb_checkpoints
+jupyterbook/content
+*.tar
+*.zip
