@@ -1,4 +1,4 @@
-wget -O $HOME/pandoc.deb https://github.com/jgm/pandoc/releases/download/3.1.2/pandoc-3.1.2-1-amd64.deb
-dpkg -x $HOME/pandoc.deb $HOME
+wget -O $HOME/.local/pandoc.deb https://github.com/jgm/pandoc/releases/download/3.1.2/pandoc-3.1.2-1-amd64.deb
+dpkg -x $HOME/.local/pandoc.deb $HOME/.local
 
 jupyter labextension install @jupyterlab/latex
