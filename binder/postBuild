@@ -1,6 +1,5 @@
-PANDOC_PATH = ./.pandoc
-mkdir $PANDOC_PATH
-wget -O $PANDOC_PATH/pandoc.deb https://github.com/jgm/pandoc/releases/download/3.1.2/pandoc-3.1.2-1-amd64.deb
-dpkg -x $PANDOC_PATH/pandoc.deb $PANDOC_PATH
+mkdir .pandoc
+wget -O ./.pandoc/pandoc.deb https://github.com/jgm/pandoc/releases/download/3.1.2/pandoc-3.1.2-1-amd64.deb
+dpkg -x ./.pandoc/pandoc.deb ./.pandoc
 
 jupyter labextension install @jupyterlab/latex
