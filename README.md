@@ -13,6 +13,7 @@ Overall process (latex => markdown => html):
 
 ### Step by Step
 
-1. Open link
-1. Upload the Latex project (e.g., `content/intel4coroTextbook/`) here name the folder to `intel4coroTextbook`.
+1. Open link [https://binder.intel4coro.de/v2/gh/yxzhan/docker-stacks.git/textbook?labpath=tex2jb.ipynb](https://binder.intel4coro.de/v2/gh/yxzhan/docker-stacks.git/textbook?labpath=tex2jb.ipynb)
+1. Upload the Latex project (e.g., `content/intel4coroTextbook/`) and name the folder to `intel4coroTextbook`.
 1. Execute notebook `tex2jb.ipynb`
+1. The exported files are under folder `html`
