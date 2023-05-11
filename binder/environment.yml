@@ -13,3 +13,4 @@ dependencies:
       - jupyterlab_image_editor
       - jupyterlab-cell-flash
       - jupyterlab-search-replace
+      - stickyland
