@@ -6,6 +6,7 @@ dependencies:
     - setuptools
     - jupyterlab
     - pip:
+      - jupyter-book
       - jupyterlab_latex
       - pyyaml
       - jupyter-archive
