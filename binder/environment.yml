@@ -1,0 +1,15 @@
+channels:
+    - conda-forge
+dependencies:
+    - python
+    - pip
+    - setuptools
+    - jupyterlab
+    - pip:
+      - jupyterlab_latex
+      - pyyaml
+      - jupyter-archive
+      - jlab-enhanced-cell-toolbar
+      - jupyterlab_image_editor
+      - jupyterlab-cell-flash
+      - jupyterlab-search-replace
