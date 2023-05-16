@@ -3,15 +3,18 @@
 version: '3'
 services:  
   cram:
-    image: "intel4coro:jupyterhub-0.1.5"
+    image: "yxzhan/intel4coro:binderhub-0.0.7"
     container_name: intel4coro_hub
-    ports: 
-      - 8888:8888
+    # ports: 
+    #   - 8888:8888
+    network_mode: host
     privileged: true
-    # entrypoint: /home/lectures/init-dev.sh
-    # user: "root"
+    entrypoint: ./lectures/init.sh
+    command: jupyter lab  --allow-root --NotebookApp.token='' --no-browser
+    user: "root"
     environment:
       - DISPLAY=${DISPLAY}
     volumes:
-      - /home/yanxiang/Repos:/home/jovyan/development
+      - ./:/home/jovyan/lectures/
+      # - /home/yanxiang/Repos:/home/jovyan/development/
       - /tmp/.X11-unix:/tmp/.X11-unix:rw

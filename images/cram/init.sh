@@ -2,13 +2,11 @@
 
 source ${HOME}/workspace/ros/devel/setup.bash
 
-echo "Launching Roscore"
 roscore &
-
-echo "Launching cram_projection_demos household_pr2.launch "
 roslaunch --wait cram_projection_demos household_pr2.launch &
+roslaunch --wait rvizweb rvizweb.launch config_name:=cram_projection_demos &
+roslaunch --wait ${PWD}/lectures/reset_pr2.launch msg_file:=${PWD}/lectures/reset_pr2.txt
 
-echo "Launching rvizweb"
-roslaunch --wait rvizweb rvizweb.launch & 
+exec "$@"
 
-xvfb-run exec "$@"
+
