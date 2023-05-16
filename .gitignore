@@ -5,6 +5,8 @@ textbook
 intel4coroTextbook
 html
 .ipynb_checkpoints
+common-lisp-jupyter
+roslog
 jupyterbook/content
 *.tar
 *.zip
