@@ -1,0 +1,59 @@
+FROM jupyter/base-notebook:ubuntu-20.04
+
+# --- Set arguments ---
+ARG IAI_WS=/home/${NB_USER}/workspace/ros
+ARG ROS_PKG=ros-base
+
+# --- Set system environment variables ---
+ENV ROS_DISTRO=noetic
+ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
+ENV ROS_ROOT=/opt/ros/noetic/share/ros
+ENV ROS_PYTHON_VERSION=3
+ENV DEBIAN_FRONTEND=noninteractive
+ENV HOME /home/${NB_USER}
+ENV ROS_PACKAGE_PATH=${IAI_WS}/src:${ROS_PATH}/share:${ROS_PATH}/stacks
+ENV CMAKE_PREFIX_PATH=/home/${NB_USER}/workspace/ros/devel:${ROS_PATH}
+ENV PATH=${ROS_PATH}/bin:$PATH
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=${IAI_WS}/devel/lib/python3/dist-packages:${ROS_PATH}/lib/python3/dist-packages
+ENV LD_LIBRARY_PATH=${IAI_WS}/devel/lib:${ROS_PATH}/lib:${ROS_PATH}/lib/x86_64-linux-gnu
+ENV ROS_MASTER_URI=http://localhost:11311
+
+# --- Install ros noetic and compiler packages ---
+USER root
+RUN apt-get update && apt-get install -y curl gnupg2 build-essential lsb-release net-tools xvfb git vim htop
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+RUN apt-get update && apt-get install -y ros-${ROS_DISTRO}-${ROS_PKG}
+RUN echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
+
+USER ${NB_USER}
+# Use the conda environment to install python packages whenever possible
+SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
+RUN pip install rosdep rosinstall rosinstall-generator wstool rosdistro \ 
+        catkin-tools pyyaml==5.4.1 empy
+# "rosdep init" need root permission
+USER root
+RUN rosdep init
+USER ${NB_USER}
+RUN rosdep update
+
+# ---  Create an empty Catkin Workspace ---
+RUN mkdir -p /home/${NB_USER}/workspace/ros/src 
+WORKDIR /home/${NB_USER}/workspace/ros
+RUN catkin init
+WORKDIR /home/${NB_USER}/workspace/ros/src
+RUN wstool init
+WORKDIR /home/${NB_USER}/workspace/ros/
+RUN catkin config --extend ${ROS_PATH}
+RUN echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
+
+# Install Juptyerlab adds-on and required Python packages
+RUN pip install jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
+                cbor2 twisted cryptography==38.0.4 autobahn \
+                pymongo Pillow pycryptodomex gnupg
+
+WORKDIR /home/${NB_USER}/
+
+ENTRYPOINT ["xvfb-run"]
+CMD [ "start-singleuser.sh" ]
