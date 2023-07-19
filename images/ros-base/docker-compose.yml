@@ -1,0 +1,12 @@
+# docker-compose-linux.yml
+# docker-compose --file docker-compose-linux.yml up
+version: '3'
+services:
+  cram:
+    image: "yxzhan/intel4coro:jupyterhub-ros-base-0.2"
+    stdin_open: true
+    tty: true
+    ports: 
+      - 8888:8888
+    privileged: true
+    command: start-notebook.sh  --allow-root --NotebookApp.token='' --no-browser

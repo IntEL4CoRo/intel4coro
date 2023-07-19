@@ -21,39 +21,45 @@ ENV ROS_MASTER_URI=http://localhost:11311
 
 # --- Install ros noetic and compiler packages ---
 USER root
-RUN apt-get update && apt-get install -y curl gnupg2 build-essential lsb-release net-tools xvfb git vim htop
+RUN apt-get update && apt-get install -y curl gnupg2 build-essential lsb-release net-tools \
+        xvfb git vim htop
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
-RUN apt-get update && apt-get install -y ros-${ROS_DISTRO}-${ROS_PKG}
+RUN apt-get update && apt-get install -y ros-${ROS_DISTRO}-${ROS_PKG} ros-${ROS_DISTRO}-tf2-tools 
 RUN echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
 
 USER ${NB_USER}
-# Use the conda environment to install python packages whenever possible
+# Install python packages
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 RUN pip install rosdep rosinstall rosinstall-generator wstool rosdistro \ 
-        catkin-tools pyyaml==5.4.1 empy
+        catkin-tools pyyaml empy ipywidgets \
+        jupyter-resource-usage jupyter-offlinenotebook \
+        jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
+        cbor2 twisted cryptography==38.0.4 autobahn \
+        pymongo Pillow pycryptodomex gnupg
+
 # "rosdep init" need root permission
 USER root
 RUN rosdep init
 USER ${NB_USER}
 RUN rosdep update
 
-# ---  Create an empty Catkin Workspace ---
+# ---  Create an Catkin Workspace ---
 RUN mkdir -p /home/${NB_USER}/workspace/ros/src 
 WORKDIR /home/${NB_USER}/workspace/ros
 RUN catkin init
-WORKDIR /home/${NB_USER}/workspace/ros/src
-RUN wstool init
-WORKDIR /home/${NB_USER}/workspace/ros/
+RUN cd /home/${NB_USER}/workspace/ros/src && wstool init
+# Install Rvizweb
+RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.4.tar.gz
+RUN git clone https://github.com/yxzhan/rvizweb.git src/rvizweb -b 0.1.3
 RUN catkin config --extend ${ROS_PATH}
+USER root
+RUN rosdep install -y --ignore-src --from-paths ./ -r
+USER ${NB_USER}
+RUN catkin build
 RUN echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
 
-# Install Juptyerlab adds-on and required Python packages
-RUN pip install jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
-                cbor2 twisted cryptography==38.0.4 autobahn \
-                pymongo Pillow pycryptodomex gnupg
-
+RUN npm cache clean --force && pip cache purge && rm -rf ${HOME}/.cache/bower && mamba clean -ya
 WORKDIR /home/${NB_USER}/
-
-ENTRYPOINT ["xvfb-run"]
-CMD [ "start-singleuser.sh" ]
+COPY --chown=${NB_USER}:users ./entrypoint.sh /home/${NB_USER}/.local/
+ENTRYPOINT ["/home/jovyan/.local/entrypoint.sh"]
