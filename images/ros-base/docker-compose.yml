@@ -3,7 +3,7 @@
 version: '3'
 services:
   cram:
-    image: "yxzhan/intel4coro:jupyterhub-ros-base-0.2"
+    image: "yxzhan/intel4coro:jupyterhub-ros-base-0.3"
     stdin_open: true
     tty: true
     ports: 

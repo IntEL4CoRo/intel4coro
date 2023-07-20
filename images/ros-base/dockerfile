@@ -36,7 +36,7 @@ RUN pip install rosdep rosinstall rosinstall-generator wstool rosdistro \
         jupyter-resource-usage jupyter-offlinenotebook \
         jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
         cbor2 twisted cryptography==38.0.4 autobahn \
-        pymongo Pillow pycryptodomex gnupg
+        pymongo Pillow pycryptodomex gnupg simplejpeg
 
 # "rosdep init" need root permission
 USER root
@@ -45,13 +45,15 @@ USER ${NB_USER}
 RUN rosdep update
 
 # ---  Create an Catkin Workspace ---
-RUN mkdir -p /home/${NB_USER}/workspace/ros/src 
+RUN mkdir -p /home/${NB_USER}/workspace/ros/src
 WORKDIR /home/${NB_USER}/workspace/ros
 RUN catkin init
 RUN cd /home/${NB_USER}/workspace/ros/src && wstool init
 # Install Rvizweb
 RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.4.tar.gz
 RUN git clone https://github.com/yxzhan/rvizweb.git src/rvizweb -b 0.1.3
+RUN git clone https://github.com/yxzhan/rosboard.git src/rosboard -b main
+COPY --chown=${NB_USER}:users ./app.json /home/${NB_USER}/workspace/ros/src/rvizweb/webapps/
 RUN catkin config --extend ${ROS_PATH}
 USER root
 RUN rosdep install -y --ignore-src --from-paths ./ -r
