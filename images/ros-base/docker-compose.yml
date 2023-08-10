@@ -3,10 +3,11 @@
 version: '3'
 services:
   cram:
-    image: "yxzhan/intel4coro:jupyterhub-ros-base-0.3"
+    image: "yxzhan/intel4coro:jupyterhub-ros-full-0.2"
     stdin_open: true
     tty: true
     ports: 
       - 8888:8888
     privileged: true
+    user: root
     command: start-notebook.sh  --allow-root --NotebookApp.token='' --no-browser
