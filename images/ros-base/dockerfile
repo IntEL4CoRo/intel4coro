@@ -37,11 +37,12 @@ COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/l
 # Install python packages
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 RUN pip install rosdep rosinstall rosinstall-generator wstool rosdistro \ 
-        catkin-tools pyyaml==5.3.1 empy ipywidgets \
+        catkin-tools pyyaml==5.3.1 jupyterlab==3.6.5 empy ipywidgets \
         jupyter-resource-usage jupyter-offlinenotebook \
         jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
         cbor2 twisted cryptography==38.0.4 autobahn \
-        pymongo Pillow pycryptodomex gnupg simplejpeg
+        pymongo Pillow pycryptodomex gnupg simplejpeg \
+        https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.6.tar.gz
 
 # "rosdep init" need root permission
 USER root
@@ -58,7 +59,6 @@ WORKDIR /home/${NB_USER}/workspace/ros/src
 RUN wstool init && \
     wstool merge https://raw.githubusercontent.com/yxzhan/rvizweb/master/.rosinstall && \
     wstool update
-RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.5.tar.gz
 RUN catkin config --extend ${ROS_PATH}
 USER root
 RUN apt update && rosdep install -y --ignore-src --from-paths ./ -r
@@ -66,8 +66,8 @@ USER ${NB_USER}
 RUN catkin build
 RUN echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
 
-RUN npm cache clean --force && pip cache purge && rm -rf ${HOME}/.cache/bower && mamba clean -ya
-WORKDIR /home/${NB_USER}/
 COPY --chown=${NB_USER}:users ./entrypoint.sh /home/${NB_USER}/.local/
 ENTRYPOINT ["/home/jovyan/.local/entrypoint.sh"]
-CMD [ "start-notebook.sh", "--NotebookApp.token=''", "--no-browser"]
+
+WORKDIR /home/${NB_USER}/
+CMD ["start-notebook.sh"]

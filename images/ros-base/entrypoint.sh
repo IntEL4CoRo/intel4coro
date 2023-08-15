@@ -3,5 +3,11 @@ source ${HOME}/workspace/ros/devel/setup.bash
 
 roscore &
 roslaunch --wait rvizweb rvizweb.launch &
-roslaunch --wait rosboard rosboard.launch &
-xvfb-run exec "$@"
+
+jupyter nbextension list
+
+if [ -n "$DISPLAY" ]; then
+    exec "$@"
+else
+    xvfb-run exec "$@"
+fi

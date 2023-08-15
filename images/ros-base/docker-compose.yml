@@ -2,12 +2,15 @@
 # docker-compose --file docker-compose-linux.yml up
 version: '3'
 services:
-  cram:
-    image: "yxzhan/intel4coro:jupyterhub-ros-full-0.2"
+  jupyterhub-ros-base:
+    image: "intel4coro/intel4coro:jupyterhub-ros-base-0.4"
     stdin_open: true
     tty: true
     ports: 
       - 8888:8888
     privileged: true
-    user: root
+    # user: root
     command: start-notebook.sh  --allow-root --NotebookApp.token='' --no-browser
+    entrypoint: /home/jovyan/devel/entrypoint.sh
+    volumes:
+      - ./:/home/jovyan/devel
