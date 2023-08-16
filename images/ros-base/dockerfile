@@ -1,10 +1,11 @@
 FROM jupyter/base-notebook:ubuntu-20.04
+ARG ROS_PKG=desktop-full
+LABEL version="ROS-noetic-${ROS_PKG}"
 
-# --- Set arguments ---
-ARG IAI_WS=/home/${NB_USER}/workspace/ros
-ARG ROS_PKG=ros-base
+SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 
 # --- Set system environment variables ---
+ARG IAI_WS=/home/${NB_USER}/workspace/ros
 ENV ROS_DISTRO=noetic
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
 ENV ROS_ROOT=/opt/ros/noetic/share/ros
@@ -20,52 +21,93 @@ ENV ROS_MASTER_URI=http://localhost:11311
 
 # --- Install ros noetic and compiler packages ---
 USER root
-RUN apt-get update && apt-get install -y curl gnupg2 build-essential lsb-release net-tools \
-        xvfb git vim htop
-RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
-RUN apt-get update && apt-get install -y ros-${ROS_DISTRO}-${ROS_PKG} ros-${ROS_DISTRO}-tf2-tools 
-RUN echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
+RUN apt update && apt install -y \
+    curl \
+    gnupg2 \
+    build-essential \
+    lsb-release \
+    net-tools \
+    xvfb \
+    git \
+    vim \
+    htop && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt clean
 
 USER ${NB_USER}
-
 # --- Install Oh-my-bash ---
-RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended && \
-    sed -i 's/OSH_THEME="font"/OSH_THEME="half-life"/' /home/${NB_USER}/.bashrc
-COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended
+# --- Customize .bashrc ---
+COPY --chown=${NB_USER}:users ./bashrc.sh /home/${NB_USER}/.bashrc
 
+USER root
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+RUN apt update && apt install -y \
+    ros-${ROS_DISTRO}-${ROS_PKG} \
+    ros-${ROS_DISTRO}-tf2-tools && \
+    apt clean && \
+    echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc && \
+    echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
+
+USER ${NB_USER}
 # Install python packages
-SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
-RUN pip install rosdep rosinstall rosinstall-generator wstool rosdistro \ 
-        catkin-tools pyyaml==5.3.1 jupyterlab==3.6.5 empy ipywidgets \
-        jupyter-resource-usage jupyter-offlinenotebook \
-        jupyter-server-proxy jupyterlab-git jlab-enhanced-cell-toolbar \
-        cbor2 twisted cryptography==38.0.4 autobahn \
-        pymongo Pillow pycryptodomex gnupg simplejpeg \
-        https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/release/jupyterlab_rviz-0.2.6.tar.gz
+RUN pip install \
+    autobahn \
+    catkin-tools \
+    cbor2 \
+    cryptography==38.0.4 \
+    empy \
+    gnupg \
+    ipywidgets \
+    jupyterlab==3.6.5 \
+    jupyter-resource-usage \
+    jupyter-offlinenotebook \
+    jupyter-server-proxy \
+    jupyterlab-git \
+    jlab-enhanced-cell-toolbar \
+    pymongo \
+    Pillow \
+    pycryptodomex \
+    pyyaml==5.3.1 \
+    rosdep \
+    rosinstall \
+    rosinstall-generator \
+    rosdistro \
+    simplejpeg \
+    twisted \
+    wstool \
+    https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.2.8.tar.gz && \
+    pip cache purge
 
 # "rosdep init" need root permission
 USER root
 RUN rosdep init
 USER ${NB_USER}
-RUN rosdep update
-
 # ---  Create an Catkin Workspace ---
 RUN mkdir -p /home/${NB_USER}/workspace/ros/src
 WORKDIR /home/${NB_USER}/workspace/ros
-RUN catkin init
-# Install Rvizweb
-WORKDIR /home/${NB_USER}/workspace/ros/src
-RUN wstool init && \
+# ---  Intall ROS Webtools ---
+RUN catkin init && \
+    cd src && \
+    wstool init && \
     wstool merge https://raw.githubusercontent.com/yxzhan/rvizweb/master/.rosinstall && \
-    wstool update
-RUN catkin config --extend ${ROS_PATH}
-USER root
-RUN apt update && rosdep install -y --ignore-src --from-paths ./ -r
-USER ${NB_USER}
-RUN catkin build
-RUN echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
+    wstool update && \
+    catkin config --extend ${ROS_PATH} && \
+    rosdep update
 
+USER root
+RUN rosdep install -y --ignore-src --from-paths ./ -r && \
+    rosdep fix-permissions
+
+USER ${NB_USER}
+RUN catkin build && \
+    echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
+
+# --- Appy JupyterLab Settings ---
+COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
+
+# --- Entrypoint ---
 COPY --chown=${NB_USER}:users ./entrypoint.sh /home/${NB_USER}/.local/
 ENTRYPOINT ["/home/jovyan/.local/entrypoint.sh"]
 
