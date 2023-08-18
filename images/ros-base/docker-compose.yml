@@ -3,7 +3,7 @@
 version: '3'
 services:
   jupyterhub-ros-base:
-    image: "intel4coro/intel4coro:jupyterhub-ros-base-0.4"
+    image: "intel4coro/intel4coro:jupyterhub-ros-base-0.5"
     stdin_open: true
     tty: true
     ports: 
