@@ -1,0 +1,5 @@
+unreal/
+.vscode
+!.gitignore
+**/.ipynb_checkpoints/*
+**/common-lisp-jupyter/*
