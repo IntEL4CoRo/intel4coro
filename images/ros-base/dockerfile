@@ -1,6 +1,6 @@
 FROM jupyter/base-notebook:ubuntu-20.04
-# ARG ROS_PKG=ros-base
-ARG ROS_PKG=desktop-full
+ARG ROS_PKG=ros-base
+# ARG ROS_PKG=desktop-full
 LABEL version="ROS-noetic-${ROS_PKG}"
 
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
@@ -76,9 +76,7 @@ RUN pip install \
     rosdistro \
     simplejpeg \
     twisted \
-    wstool \
-    https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz \
-    https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.2.8.tar.gz && \
+    wstool && \
     pip cache purge
 
 # "rosdep init" need root permission
@@ -104,6 +102,10 @@ RUN rosdep install -y --ignore-src --from-paths ./ -r && \
 USER ${NB_USER}
 RUN catkin build && \
     echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
+
+# --- Install developing jupyterlab extensions ---
+RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz \
+    https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.2.8.tar.gz
 
 # --- Appy JupyterLab Settings ---
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
