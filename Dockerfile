@@ -1,119 +1,95 @@
-FROM jupyter/base-notebook:ubuntu-20.04
-ARG ROS_PKG=ros-base
-# ARG ROS_PKG=desktop-full
+FROM tswetnam/xpra:cudagl-20.04
+# ARG ROS_PKG=ros-base
+ARG ROS_PKG=desktop-full
 LABEL version="ROS-noetic-${ROS_PKG}"
+ENV SHELL=/bin/bash
+ENV DISPLAY=:0
+ENV NB_USER=user
+# ENV PATH=/home/${NB_USER}/.local/bin:$PATH
 
-SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
-
-# --- Set system environment variables ---
-ARG IAI_WS=/home/${NB_USER}/workspace/ros
+# Install ROS
 ENV ROS_DISTRO=noetic
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
-ENV ROS_ROOT=/opt/ros/noetic/share/ros
-ENV ROS_PYTHON_VERSION=3
-ENV DEBIAN_FRONTEND=noninteractive
-ENV HOME /home/${NB_USER}
-ENV ROS_PACKAGE_PATH=${IAI_WS}/src:${ROS_PATH}/share:${ROS_PATH}/stacks
-ENV CMAKE_PREFIX_PATH=/home/${NB_USER}/workspace/ros/devel:${ROS_PATH}
-ENV PATH=/home/jovyan/.local/bin:${ROS_PATH}/bin:/root/.local/bin:$PATH
-ENV PYTHONPATH=${IAI_WS}/devel/lib/python3/dist-packages:${ROS_PATH}/lib/python3/dist-packages
-ENV LD_LIBRARY_PATH=${IAI_WS}/devel/lib:${ROS_PATH}/lib:${ROS_PATH}/lib/x86_64-linux-gnu
-ENV ROS_MASTER_URI=http://localhost:11311
-
-# --- Install ros noetic and compiler packages ---
-USER root
-RUN apt update && apt install -y \
-    curl \
-    gnupg2 \
-    build-essential \
-    lsb-release \
-    net-tools \
-    xvfb \
-    git \
-    vim \
-    htop && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt clean
-
-USER ${NB_USER}
-# --- Install Oh-my-bash ---
-RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended
-# --- Customize .bashrc ---
-COPY --chown=${NB_USER}:users ./bashrc.sh /home/${NB_USER}/.bashrc
+ENV ROS_ROOT=${ROS_PATH}/share/ros
 
 USER root
+RUN rm /etc/apt/sources.list.d/*
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
-RUN apt update && apt install -y \
-    ros-${ROS_DISTRO}-${ROS_PKG} \
-    ros-${ROS_DISTRO}-tf2-tools && \
-    apt clean && \
-    echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc && \
-    echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+RUN apt update -q && apt install -y \
+      ros-${ROS_DISTRO}-${ROS_PKG} \
+      ros-${ROS_DISTRO}-tf2-tools \
+      vim \
+      net-tools\
+      build-essential \
+      lsb-release \
+  && apt clean \
+  && echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc \
+  && echo "source ${ROS_PATH}/setup.bash" >> /home/user/.bashrc
 
 USER ${NB_USER}
+# Update Conda base to python 3.10
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_22.11.1-1-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -u -b -p /opt/conda
 # Install python packages
+# RUN conda create -n iai python=3.10.6 \
+#  && echo "conda activate iai" >> /home/${NB_USER}/.bashrc
+# SHELL ["conda", "run", "-n", "iai", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
+# RUN conda install python==3.10.6
 RUN pip install \
-    autobahn \
-    catkin-tools \
-    cbor2 \
-    cryptography==38.0.4 \
-    empy \
-    gnupg \
-    ipywidgets \
-    jupyterlab==3.6.5 \
-    jupyter-resource-usage \
-    jupyter-offlinenotebook \
-    jupyter-server-proxy \
-    jupyterlab-git \
-    pymongo \
-    Pillow \
-    pycryptodomex \
-    pyyaml==5.3.1 \
-    rosdep \
-    rosinstall \
-    rosinstall-generator \
-    rosdistro \
-    simplejpeg \
-    twisted \
-    wstool && \
-    pip cache purge
+  empy \
+  jupyterlab==3.6.5 \
+  jupyterhub==3.0.0 \
+  ipywidgets \
+  jupyter-resource-usage \
+  jupyter-offlinenotebook \
+  jupyterlab-git \
+  jupyter-server-proxy \
+  catkin-tools \
+  vcstool \
+  rosdep \
+  rosinstall \
+  rosinstall-generator \
+  rosdistro \
+  rosdep \
+  && pip cache purge
 
-# "rosdep init" need root permission
+RUN pip install git+https://github.com/FZJ-JSC/jupyter-xprahtml5-proxy.git
+EXPOSE 8888
+
+# Initiate an empty workspace
+ENV IAI_WS=/home/${NB_USER}/workspace/ros
+
+RUN mkdir -p ${IAI_WS}/src
+WORKDIR ${IAI_WS}/src/
+RUN git clone https://github.com/IntEL4CoRo/pycram.git -b binder \
+  && vcs import --input pycram/binder/pycram-http.rosinstall --recursive
+
+RUN cd pycram \
+  && git submodule update --init \
+  && cd src/neem_interface_python \
+  && git clone https://github.com/benjaminalt/neem-interface.git src/neem-interface
+
+RUN pip install --requirement ${IAI_WS}/src/pycram/requirements.txt --user \
+  && pip install --requirement ${IAI_WS}/src/pycram/src/neem_interface_python/requirements.txt --user \
+  && pip cache purge
+
+# Build pycram workspace
+WORKDIR  ${IAI_WS}
 USER root
-RUN rosdep init
+RUN rosdep init \
+  && rosdep update \
+  && rosdep install -y --ignore-src --from-paths ./ -r \
+  && rosdep fix-permissions
 USER ${NB_USER}
-# ---  Create an Catkin Workspace ---
-RUN mkdir -p /home/${NB_USER}/workspace/ros/src
-WORKDIR /home/${NB_USER}/workspace/ros
-# ---  Intall ROS Webtools ---
-RUN catkin init && \
-    cd src && \
-    wstool init && \
-    wstool merge https://raw.githubusercontent.com/yxzhan/rvizweb/master/.rosinstall && \
-    wstool update && \
-    catkin config --extend ${ROS_PATH} && \
-    rosdep update
+RUN catkin config --extend ${ROS_PATH}
+RUN catkin build
 
+WORKDIR ${IAI_WS}/src/pycram
+COPY --chown=${NB_USER}:users entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
 USER root
-RUN rosdep install -y --ignore-src --from-paths ./ -r && \
-    rosdep fix-permissions
-
+RUN ls -la /tmp
+RUN chmod 1777 /tmp/.X11-unix
 USER ${NB_USER}
-RUN catkin build && \
-    echo "source /home/${NB_USER}/workspace/ros/devel/setup.bash" >> /home/${NB_USER}/.bashrc
-
-# --- Install developing jupyterlab extensions ---
-RUN pip install \
-    https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz \
-    https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.2.8.tar.gz
-
-# --- Appy JupyterLab Settings ---
-COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
-
-# --- Entrypoint ---
-COPY --chown=${NB_USER}:users ./entrypoint.sh /home/${NB_USER}/.local/
-ENTRYPOINT ["/home/jovyan/.local/entrypoint.sh"]
-
-WORKDIR /home/${NB_USER}/
-CMD ["start-notebook.sh"]

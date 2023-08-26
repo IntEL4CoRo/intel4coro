@@ -1,11 +1,7 @@
 #!/bin/bash
-source ${HOME}/workspace/ros/devel/setup.bash
 
+source ${IAI_WS}/devel/setup.bash
 roscore &
-roslaunch --wait rvizweb rvizweb.launch &
+roslaunch --wait pycram ik_and_description.launch &
 
-if [ -n "$DISPLAY" ]; then
-    exec "$@"
-else
-    xvfb-run exec "$@"
-fi
+exec "$@"
