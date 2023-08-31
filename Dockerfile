@@ -1,18 +1,24 @@
+FROM jupyter/base-notebook:ubuntu-20.04 AS BASE_NOTEBOOK
+
 FROM tswetnam/xpra:cudagl-20.04
+
+ENV SHELL=/bin/bash
+ENV DISPLAY=:100
+ENV NB_USER=user
+
+USER root
+RUN deluser ${NB_USER} sudo
+
+COPY --from=BASE_NOTEBOOK --chown=${NB_USER}:users /usr/local/bin/. /usr/local/bin/
+
+# Install ROS
 # ARG ROS_PKG=ros-base
 ARG ROS_PKG=desktop-full
 LABEL version="ROS-noetic-${ROS_PKG}"
-ENV SHELL=/bin/bash
-ENV DISPLAY=:0
-ENV NB_USER=user
-# ENV PATH=/home/${NB_USER}/.local/bin:$PATH
-
-# Install ROS
 ENV ROS_DISTRO=noetic
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
 ENV ROS_ROOT=${ROS_PATH}/share/ros
 
-USER root
 RUN rm /etc/apt/sources.list.d/*
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
@@ -25,18 +31,16 @@ RUN apt update -q && apt install -y \
       lsb-release \
   && apt clean \
   && echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc \
-  && echo "source ${ROS_PATH}/setup.bash" >> /home/user/.bashrc
+  && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
 
 USER ${NB_USER}
 # Update Conda base to python 3.10
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_22.11.1-1-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -u -b -p /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_22.11.1-1-Linux-x86_64.sh -O ~/miniconda.sh \
+    && /bin/bash ~/miniconda.sh -u -b -p /opt/conda \
+    && rm miniconda.sh
+
 # Install python packages
-# RUN conda create -n iai python=3.10.6 \
-#  && echo "conda activate iai" >> /home/${NB_USER}/.bashrc
-# SHELL ["conda", "run", "-n", "iai", "/bin/bash", "-c"]
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
-# RUN conda install python==3.10.6
 RUN pip install \
   empy \
   jupyterlab==3.6.5 \
@@ -54,9 +58,6 @@ RUN pip install \
   rosdistro \
   rosdep \
   && pip cache purge
-
-RUN pip install git+https://github.com/FZJ-JSC/jupyter-xprahtml5-proxy.git
-EXPOSE 8888
 
 # Initiate an empty workspace
 ENV IAI_WS=/home/${NB_USER}/workspace/ros
@@ -85,11 +86,13 @@ RUN rosdep init \
 USER ${NB_USER}
 RUN catkin config --extend ${ROS_PATH}
 RUN catkin build
+# Install xpra extension
+COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/jupyter-xprahtml5-proxy
+RUN pip install -e /home/${NB_USER}/jupyter-xprahtml5-proxy
 
-WORKDIR ${IAI_WS}/src/pycram
+EXPOSE 8888
+USER ${NB_USER}
+WORKDIR /home/${NB_USER}
 COPY --chown=${NB_USER}:users entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
-USER root
-RUN ls -la /tmp
-RUN chmod 1777 /tmp/.X11-unix
-USER ${NB_USER}
+CMD [ "start-notebook.sh" ]
