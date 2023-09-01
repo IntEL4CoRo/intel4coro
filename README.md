@@ -1,4 +1,4 @@
-# Base docker image (Jupyterlab + ROS noetic + Web visualization tools)
+# Base docker image (Jupyterlab + ROS noetic + XPRA + Remote Desktop)
 
 ## Live Demo
 

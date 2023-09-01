@@ -35,9 +35,9 @@ RUN apt update -q && apt install -y \
 
 USER ${NB_USER}
 # Update Conda base to python 3.10
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_22.11.1-1-Linux-x86_64.sh -O ~/miniconda.sh \
-    && /bin/bash ~/miniconda.sh -u -b -p /opt/conda \
-    && rm miniconda.sh
+# RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_22.11.1-1-Linux-x86_64.sh -O ~/miniconda.sh \
+#     && /bin/bash ~/miniconda.sh -u -b -p /opt/conda \
+#     && rm miniconda.sh
 
 # Install python packages
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
@@ -59,25 +59,14 @@ RUN pip install \
   rosdep \
   && pip cache purge
 
+# Install xpra extension
+COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/jupyter-xprahtml5-proxy
+RUN pip install -e /home/${NB_USER}/jupyter-xprahtml5-proxy
+
 # Initiate an empty workspace
 ENV IAI_WS=/home/${NB_USER}/workspace/ros
-
 RUN mkdir -p ${IAI_WS}/src
-WORKDIR ${IAI_WS}/src/
-RUN git clone https://github.com/IntEL4CoRo/pycram.git -b binder \
-  && vcs import --input pycram/binder/pycram-http.rosinstall --recursive
-
-RUN cd pycram \
-  && git submodule update --init \
-  && cd src/neem_interface_python \
-  && git clone https://github.com/benjaminalt/neem-interface.git src/neem-interface
-
-RUN pip install --requirement ${IAI_WS}/src/pycram/requirements.txt --user \
-  && pip install --requirement ${IAI_WS}/src/pycram/src/neem_interface_python/requirements.txt --user \
-  && pip cache purge
-
-# Build pycram workspace
-WORKDIR  ${IAI_WS}
+WORKDIR ${IAI_WS}
 USER root
 RUN rosdep init \
   && rosdep update \
@@ -86,9 +75,6 @@ RUN rosdep init \
 USER ${NB_USER}
 RUN catkin config --extend ${ROS_PATH}
 RUN catkin build
-# Install xpra extension
-COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/jupyter-xprahtml5-proxy
-RUN pip install -e /home/${NB_USER}/jupyter-xprahtml5-proxy
 
 EXPOSE 8888
 USER ${NB_USER}
