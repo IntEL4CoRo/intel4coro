@@ -12,8 +12,8 @@ RUN deluser ${NB_USER} sudo
 COPY --from=BASE_NOTEBOOK --chown=${NB_USER}:users /usr/local/bin/. /usr/local/bin/
 
 # Install ROS
-# ARG ROS_PKG=ros-base
-ARG ROS_PKG=desktop-full
+ARG ROS_PKG=ros-base
+# ARG ROS_PKG=desktop-full
 LABEL version="ROS-noetic-${ROS_PKG}"
 ENV ROS_DISTRO=noetic
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
@@ -60,8 +60,10 @@ RUN pip install \
   && pip cache purge
 
 # Install xpra extension
-COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/jupyter-xprahtml5-proxy
-RUN pip install -e /home/${NB_USER}/jupyter-xprahtml5-proxy
+COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
+RUN pip install -e /home/${NB_USER}/.jupyter-xprahtml5-proxy
+
+RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
 
 # Initiate an empty workspace
 ENV IAI_WS=/home/${NB_USER}/workspace/ros
