@@ -1,43 +1,53 @@
-FROM jupyter/base-notebook:ubuntu-20.04 AS BASE_NOTEBOOK
-
-FROM tswetnam/xpra:cudagl-20.04
-
-ENV SHELL=/bin/bash
-ENV DISPLAY=:100
-ENV NB_USER=user
-
-USER root
-RUN deluser ${NB_USER} sudo
-
-COPY --from=BASE_NOTEBOOK --chown=${NB_USER}:users /usr/local/bin/. /usr/local/bin/
+FROM jupyter/minimal-notebook:ubuntu-20.04
 
 # Install ROS
-ARG ROS_PKG=ros-base
-# ARG ROS_PKG=desktop-full
+# ARG ROS_PKG=ros-base
+ARG ROS_PKG=desktop-full
 LABEL version="ROS-noetic-${ROS_PKG}"
 ENV ROS_DISTRO=noetic
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
 ENV ROS_ROOT=${ROS_PATH}/share/ros
+ENV DISPLAY=:100
 
-RUN rm /etc/apt/sources.list.d/*
+# Install basic tools
+USER root
+RUN  apt update -q && apt install -y \
+      git \
+      vim \
+      curl \
+      gnupg2 \
+      net-tools\
+      ca-certificates \
+      apt-transport-https \
+      build-essential \
+      lsb-release
+# Install ROS
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
 RUN apt update -q && apt install -y \
       ros-${ROS_DISTRO}-${ROS_PKG} \
       ros-${ROS_DISTRO}-tf2-tools \
-      vim \
-      net-tools\
-      build-essential \
-      lsb-release \
   && apt clean \
   && echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc \
   && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
+# Install XPRA
+RUN wget -O - https://xpra.org/gpg.asc | apt-key add - && \
+    echo "deb https://xpra.org/ focal main" > /etc/apt/sources.list.d/xpra.list
+
+RUN apt update && apt install -y \
+    xpra \
+    gdm3 \
+    glances \
+    firefox \
+    nautilus \
+    glmark2 \
+    gnome-shell \
+    gnome-session \
+    gnome-terminal \
+    libqt5x11extras5 \
+    xvfb
 
 USER ${NB_USER}
-# Update Conda base to python 3.10
-# RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_22.11.1-1-Linux-x86_64.sh -O ~/miniconda.sh \
-#     && /bin/bash ~/miniconda.sh -u -b -p /opt/conda \
-#     && rm miniconda.sh
 
 # Install python packages
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
@@ -52,6 +62,9 @@ RUN pip install \
   jupyter-server-proxy \
   catkin-tools \
   vcstool \
+  twisted \
+  pyyaml==5.3.1 \
+  autobahn \
   rosdep \
   rosinstall \
   rosinstall-generator \
@@ -66,19 +79,23 @@ RUN pip install -e /home/${NB_USER}/.jupyter-xprahtml5-proxy
 RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
 
 # Initiate an empty workspace
-ENV IAI_WS=/home/${NB_USER}/workspace/ros
-RUN mkdir -p ${IAI_WS}/src
-WORKDIR ${IAI_WS}
+ENV ROS_WS=/home/${NB_USER}/workspace/ros
+RUN mkdir -p ${ROS_WS}/src
+WORKDIR ${ROS_WS}
+
 USER root
-RUN rosdep init \
-  && rosdep update \
-  && rosdep install -y --ignore-src --from-paths ./ -r \
-  && rosdep fix-permissions
+RUN rosdep init
+
+USER ${NB_USER}
+RUN rosdep update
+
+USER root
+RUN rosdep install -y --ignore-src --from-paths ./ -r
+
 USER ${NB_USER}
 RUN catkin config --extend ${ROS_PATH}
 RUN catkin build
 
-EXPOSE 8888
 USER ${NB_USER}
 WORKDIR /home/${NB_USER}
 COPY --chown=${NB_USER}:users entrypoint.sh /

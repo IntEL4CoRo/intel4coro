@@ -3,32 +3,26 @@
 version: '3'
 services:
   jupyterhub-ros-base:
-    # image: intel4coro/base-notebook:20.04-noetic-xpra
-    image: pycram:binder
-    # image: yxzhan/gpu-jupyter:v1.5_cuda-12.0_ubuntu-20.04
-    # image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04_python-only
-    # image: intel4coro/base-notebook:desktop
-    # image: tswetnam/xpra:cudagl-20.04
-    # image: tswetnam/xpra:opengl-20.04
-    # build:
+    # image: intel4coro/base-notebook:20.04-noetic-base-xpra-py3.10
+    image: intel4coro/base-notebook:20.04-noetic-full-xpra
     #   context: ./
     #   dockerfile: ./Dockerfile
     stdin_open: true
     tty: true
     ports: 
       - 8888:8888
-      # - 9876:9876
     privileged: true
     # working_dir: /home/user
     # user: root
+    user: jovyan
     # command: start-notebook.sh  --allow-root --NotebookApp.token='' --no-browser
     # command: /bin/bash
     command: jupyter lab --allow-root --NotebookApp.token='' --no-browser --ip=0.0.0.0
-    # entrypoint: ["/home/user/work/entrypoint.sh"]
-    # volumes:
-    #   - ./:/home/user/work
+    entrypoint: ["/home/jovyan/work/entrypoint.sh"]
+    volumes:
+      - ./:/home/jovyan/work
     # environment:
-    #   # - DISPLAY=:100
+    #   - DISPLAY=:100
     #   - NVIDIA_DRIVER_CAPABILITIES=all
     # deploy:
     #   resources:
