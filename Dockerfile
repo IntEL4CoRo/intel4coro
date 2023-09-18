@@ -1,15 +1,16 @@
 FROM jupyter/minimal-notebook:ubuntu-20.04
 
-# Install ROS
+# --- Define Environment Variables--- #
 # ARG ROS_PKG=ros-base
 ARG ROS_PKG=desktop-full
 LABEL version="ROS-noetic-${ROS_PKG}"
 ENV ROS_DISTRO=noetic
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
 ENV ROS_ROOT=${ROS_PATH}/share/ros
+ENV ROS_WS=/home/${NB_USER}/workspace/ros
 ENV DISPLAY=:100
 
-# Install basic tools
+# --- Install basic tools --- #
 USER root
 RUN  apt update -q && apt install -y \
       git \
@@ -21,7 +22,14 @@ RUN  apt update -q && apt install -y \
       apt-transport-https \
       build-essential \
       lsb-release
-# Install ROS
+
+# --- Install Oh-my-bash --- #
+USER ${NB_USER}
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended
+COPY --chown=${NB_USER}:users ./bashrc.sh /home/${NB_USER}/.bashrc
+
+# --- Install ROS noetic --- #
+USER root
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
 RUN apt update -q && apt install -y \
@@ -30,10 +38,10 @@ RUN apt update -q && apt install -y \
   && apt clean \
   && echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc \
   && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
-# Install XPRA
+
+# --- Install XPRA and GUI tools --- #
 RUN wget -O - https://xpra.org/gpg.asc | apt-key add - && \
     echo "deb https://xpra.org/ focal main" > /etc/apt/sources.list.d/xpra.list
-
 RUN apt update && apt install -y \
     xpra \
     gdm3 \
@@ -48,56 +56,70 @@ RUN apt update && apt install -y \
     xvfb
 
 USER ${NB_USER}
-
-# Install python packages
+# --- Install python packages --- #
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 RUN pip install \
-  empy \
-  jupyterlab==3.6.5 \
-  jupyterhub==3.0.0 \
-  ipywidgets \
-  jupyter-resource-usage \
-  jupyter-offlinenotebook \
-  jupyterlab-git \
-  jupyter-server-proxy \
-  catkin-tools \
-  vcstool \
-  twisted \
-  pyyaml==5.3.1 \
-  autobahn \
-  rosdep \
-  rosinstall \
-  rosinstall-generator \
-  rosdistro \
-  rosdep \
-  && pip cache purge
+    autobahn \
+    catkin-tools \
+    cbor2 \
+    cryptography==38.0.4 \
+    empy \
+    gnupg \
+    ipywidgets \
+    jupyterlab==3.6.5 \
+    jupyter-resource-usage \
+    jupyter-offlinenotebook \
+    jupyter-server-proxy \
+    jupyterlab-git \
+    pymongo \
+    Pillow \
+    pycryptodomex \
+    pyyaml==5.3.1 \
+    rosdep \
+    rosinstall \
+    rosinstall-generator \
+    rosdistro \
+    simplejpeg \
+    twisted \
+    vcstool \
+    wstool && \
+    pip cache purge
 
-# Install xpra extension
+# --- Install jupyterlab extensions --- #
 COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
 RUN pip install -e /home/${NB_USER}/.jupyter-xprahtml5-proxy
-
 RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
 
-# Initiate an empty workspace
-ENV ROS_WS=/home/${NB_USER}/workspace/ros
+# --- Create a ROS workspace with Robot Web Tools --- #
 RUN mkdir -p ${ROS_WS}/src
 WORKDIR ${ROS_WS}
-
 USER root
 RUN rosdep init
-
 USER ${NB_USER}
-RUN rosdep update
+RUN catkin init && \
+    cd src && \
+    wstool init && \
+    wstool merge https://raw.githubusercontent.com/yxzhan/rvizweb/master/.rosinstall && \
+    wstool update && \
+    catkin config --extend ${ROS_PATH} && \
+    rosdep update && \
+    pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.2.8.tar.gz
 
 USER root
 RUN rosdep install -y --ignore-src --from-paths ./ -r
 
 USER ${NB_USER}
-RUN catkin config --extend ${ROS_PATH}
-RUN catkin build
+RUN catkin build && \
+    echo "source ${ROS_WS}/devel/setup.bash" >> /home/${NB_USER}/.bashrc
 
-USER ${NB_USER}
+# --- Install Gazebo web client --- #
+
+
 WORKDIR /home/${NB_USER}
+# --- Appy JupyterLab Settings --- #
+COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
+
+# --- Entrypoint --- #
 COPY --chown=${NB_USER}:users entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]

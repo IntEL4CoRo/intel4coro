@@ -2,25 +2,23 @@
 # docker-compose --file docker-compose-linux.yml up
 version: '3'
 services:
-  jupyterhub-ros-base:
-    # image: intel4coro/base-notebook:20.04-noetic-base-xpra-py3.10
+  jupyter-ros-xpra:
     image: intel4coro/base-notebook:20.04-noetic-full-xpra
-    #   context: ./
-    #   dockerfile: ./Dockerfile
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
     stdin_open: true
     tty: true
     ports: 
       - 8888:8888
     privileged: true
-    # working_dir: /home/user
     # user: root
     user: jovyan
-    # command: start-notebook.sh  --allow-root --NotebookApp.token='' --no-browser
-    # command: /bin/bash
+    working_dir: /home/jovyan
     command: jupyter lab --allow-root --NotebookApp.token='' --no-browser --ip=0.0.0.0
-    entrypoint: ["/home/jovyan/work/entrypoint.sh"]
-    volumes:
-      - ./:/home/jovyan/work
+    # entrypoint: ["/home/jovyan/work/entrypoint.sh"]
+    # volumes:
+    #   - ./:/home/jovyan/work
     # environment:
     #   - DISPLAY=:100
     #   - NVIDIA_DRIVER_CAPABILITIES=all
