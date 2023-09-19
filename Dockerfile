@@ -113,8 +113,19 @@ RUN catkin build && \
     echo "source ${ROS_WS}/devel/setup.bash" >> /home/${NB_USER}/.bashrc
 
 # --- Install Gazebo web client --- #
+# WORKDIR /home/${NB_USER}
+# USER root
+# RUN apt install -y libjansson-dev libboost-dev imagemagick libtinyxml-dev mercurial
+# USER ${NB_USER}
+# RUN mamba init && \
+#     mamba create -n gzweb nodejs==11.6.0 && \
+#     mamba && \
+#     git clone https://github.com/osrf/gzweb -b gzweb_1.4.1 && \
+#     cd gzweb && \
+#     source /usr/share/gazebo/setup.sh && \
+#     npm run deploy --- -m
 
-
+USER ${NB_USER}
 WORKDIR /home/${NB_USER}
 # --- Appy JupyterLab Settings --- #
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
