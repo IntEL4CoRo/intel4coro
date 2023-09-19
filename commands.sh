@@ -15,16 +15,16 @@ helm upgrade --cleanup-on-fail \
 
 # Install BinderHub
 helm upgrade --cleanup-on-fail \
-  --install cram \
-  jupyterhub/binderhub --version=1.0.0-0.dev.git.3080.h8f9a1dc \
-  --namespace=cram \
+  --install mybinderhub \
+  jupyterhub/binderhub --version=1.0.0-0.dev.git.3170.h84b1db9 \
+  --namespace=mybinderhub \
   --create-namespace \
   -f ./binder.yaml
 
 # Upgrade BinderHub
-helm upgrade cram --cleanup-on-fail \
-  jupyterhub/binderhub --version=1.0.0-0.dev.git.3080.h8f9a1dc \
-  --namespace=cram \
+helm upgrade mybinderhub --cleanup-on-fail \
+  jupyterhub/binderhub --version=1.0.0-0.dev.git.3170.h84b1db9 \
+  --namespace=mybinderhub \
   -f ./binder.yaml
 
 # Monitor pods status
@@ -102,8 +102,8 @@ microk8s ctr images ls name~='yxzhan'
 microk8s ctr images rm $(microk8s ctr images ls name~='yxzhan' | awk {'print $1'})
 
 # Delete a helm release
-helm delete cram --namespace cram & \
-kubectl delete namespace cram
+helm delete binder --namespace binder & \
+kubectl delete namespace binder
 
 # Set default kubernetes namespace to cram
 kubectl config set-context $(kubectl config current-context) --namespace cram
