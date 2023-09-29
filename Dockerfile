@@ -45,10 +45,7 @@ RUN wget -O - https://xpra.org/gpg.asc | apt-key add - && \
 RUN apt update && apt install -y \
     xpra \
     gdm3 \
-    glances \
-    firefox \
     nautilus \
-    glmark2 \
     gnome-shell \
     gnome-session \
     gnome-terminal \
@@ -132,5 +129,7 @@ COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/l
 
 # --- Entrypoint --- #
 COPY --chown=${NB_USER}:users entrypoint.sh /
+COPY --chown=${NB_USER}:users webapps.json ${ROS_WS}/src/rvizweb/webapps/app.json
+COPY --chown=${NB_USER}:users xpra-logo.svg ${ROS_WS}/src/rvizweb/webapps/xpra-logo.svg
 ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]

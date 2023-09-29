@@ -16,9 +16,9 @@ services:
     user: jovyan
     working_dir: /home/jovyan
     command: jupyter lab --allow-root --NotebookApp.token='' --no-browser --ip=0.0.0.0
-    # entrypoint: ["/home/jovyan/work/entrypoint.sh"]
-    # volumes:
-    #   - ./:/home/jovyan/work
+    entrypoint: ["/home/jovyan/work/entrypoint.sh"]
+    volumes:
+      - ./:/home/jovyan/work
     # environment:
     #   - DISPLAY=:100
     #   - NVIDIA_DRIVER_CAPABILITIES=all
