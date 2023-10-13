@@ -1,135 +1,83 @@
-FROM jupyter/minimal-notebook:ubuntu-20.04
+FROM jupyter/minimal-notebook:ubuntu-22.04
 
 # --- Define Environment Variables--- #
-# ARG ROS_PKG=ros-base
-ARG ROS_PKG=desktop-full
-LABEL version="ROS-noetic-${ROS_PKG}"
-ENV ROS_DISTRO=noetic
+ARG ROS_PKG=desktop
+ENV ROS_DISTRO=iron
+LABEL version="ROS-${ROS_DISTRO}-${ROS_PKG}"
+
+ENV LANG=en_US.UTF-8
+ENV DISPLAY=:100
+
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
 ENV ROS_ROOT=${ROS_PATH}/share/ros
 ENV ROS_WS=/home/${NB_USER}/workspace/ros
-ENV DISPLAY=:100
-
-# --- Install basic tools --- #
-USER root
-RUN  apt update -q && apt install -y \
-      git \
-      vim \
-      curl \
-      gnupg2 \
-      net-tools\
-      ca-certificates \
-      apt-transport-https \
-      build-essential \
-      lsb-release
 
 # --- Install Oh-my-bash --- #
 USER ${NB_USER}
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended
 COPY --chown=${NB_USER}:users ./bashrc.sh /home/${NB_USER}/.bashrc
 
-# --- Install ROS noetic --- #
+# --- Install basic tools --- #
 USER root
-RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
-RUN apt update -q && apt install -y \
-      ros-${ROS_DISTRO}-${ROS_PKG} \
-      ros-${ROS_DISTRO}-tf2-tools \
-  && apt clean \
-  && echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc \
-  && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
+RUN  apt update -q && apt install -y \
+        software-properties-common \
+        gnupg2 \
+        net-tools\
+        ca-certificates \
+        apt-transport-https \
+        build-essential \
+        lsb-release
+
+# --- Install ROS --- #
+RUN add-apt-repository universe
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+RUN apt update && \
+    apt install -y ros-dev-tools && \
+    apt upgrade -y && \
+    apt install -y ros-${ROS_DISTRO}-${ROS_PKG} && \
+    apt clean && \
+    echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc && \
+    echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
 
 # --- Install XPRA and GUI tools --- #
-RUN wget -O - https://xpra.org/gpg.asc | apt-key add - && \
-    echo "deb https://xpra.org/ focal main" > /etc/apt/sources.list.d/xpra.list
+ARG REPOFILE=https://raw.githubusercontent.com/Xpra-org/xpra/master/packaging/repos/jammy/xpra.sources
+RUN wget -O "/usr/share/keyrings/xpra.asc" https://xpra.org/xpra.asc && \
+    cd /etc/apt/sources.list.d && wget $REPOFILE
 RUN apt update && apt install -y \
-    xpra \
-    gdm3 \
-    nautilus \
-    gnome-shell \
-    gnome-session \
-    gnome-terminal \
-    libqt5x11extras5 \
-    xvfb
+        xpra \
+        gdm3 \
+        tmux \
+        firefox \
+        nautilus \
+        gnome-shell \
+        gnome-session \
+        gnome-terminal \
+        libqt5x11extras5 \
+        xvfb && \
+    apt clean
 
-USER ${NB_USER}
 # --- Install python packages --- #
-SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
-RUN pip install \
-    autobahn \
-    catkin-tools \
-    cbor2 \
-    cryptography==38.0.4 \
-    empy \
-    gnupg \
-    ipywidgets \
-    jupyterlab==3.6.5 \
-    jupyter-resource-usage \
-    jupyter-offlinenotebook \
-    jupyter-server-proxy \
-    jupyterlab-git \
-    pymongo \
-    Pillow \
-    pycryptodomex \
-    pyyaml==5.3.1 \
-    rosdep \
-    rosinstall \
-    rosinstall-generator \
-    rosdistro \
-    simplejpeg \
-    twisted \
-    vcstool \
-    wstool && \
+USER ${NB_USER}
+RUN pip install --upgrade \
+        jupyterlab \
+        ipywidgets \
+        jupyter-resource-usage \
+        jupyter-offlinenotebook \
+        jupyter-server-proxy \
+        jupyterlab-git && \
     pip cache purge
 
 # --- Install jupyterlab extensions --- #
+RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
 COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
 RUN pip install -e /home/${NB_USER}/.jupyter-xprahtml5-proxy
-RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
 
-# --- Create a ROS workspace with Robot Web Tools --- #
-RUN mkdir -p ${ROS_WS}/src
-WORKDIR ${ROS_WS}
-USER root
-RUN rosdep init
-USER ${NB_USER}
-RUN catkin init && \
-    cd src && \
-    wstool init && \
-    wstool merge https://raw.githubusercontent.com/yxzhan/rvizweb/master/.rosinstall && \
-    wstool update && \
-    catkin config --extend ${ROS_PATH} && \
-    rosdep update && \
-    pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.2.8.tar.gz
-
-USER root
-RUN rosdep install -y --ignore-src --from-paths ./ -r
-
-USER ${NB_USER}
-RUN catkin build && \
-    echo "source ${ROS_WS}/devel/setup.bash" >> /home/${NB_USER}/.bashrc
-
-# --- Install Gazebo web client --- #
-# WORKDIR /home/${NB_USER}
-# USER root
-# RUN apt install -y libjansson-dev libboost-dev imagemagick libtinyxml-dev mercurial
-# USER ${NB_USER}
-# RUN mamba init && \
-#     mamba create -n gzweb nodejs==11.6.0 && \
-#     mamba && \
-#     git clone https://github.com/osrf/gzweb -b gzweb_1.4.1 && \
-#     cd gzweb && \
-#     source /usr/share/gazebo/setup.sh && \
-#     npm run deploy --- -m
-
-USER ${NB_USER}
 WORKDIR /home/${NB_USER}
-# --- Appy JupyterLab Settings --- #
+# --- Appy JupyterLab custom Settings --- #
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
 
 # --- Entrypoint --- #
 COPY --chown=${NB_USER}:users entrypoint.sh /
-COPY --chown=${NB_USER}:users webapps.json ${ROS_WS}/src/rvizweb/webapps/app.json
-COPY --chown=${NB_USER}:users xpra-logo.svg ${ROS_WS}/src/rvizweb/webapps/xpra-logo.svg
 ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]

@@ -1,9 +1,8 @@
-# docker-compose-linux.yml
 # docker-compose --file docker-compose-linux.yml up
 version: '3'
 services:
   jupyter-ros-xpra:
-    image: intel4coro/base-notebook:20.04-noetic-full-xpra
+    image: intel4coro/base-notebook:22.04-iron
     build:
       context: ./
       dockerfile: ./Dockerfile
