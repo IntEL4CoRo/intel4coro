@@ -63,13 +63,12 @@ RUN pip install --upgrade \
         jupyterlab \
         ipywidgets \
         jupyter-resource-usage \
-        jupyter-offlinenotebook \
         jupyter-server-proxy \
-        jupyterlab-git && \
-    pip cache purge
+        jupyter-ai \
+        openai \
+    && pip cache purge
 
 # --- Install jupyterlab extensions --- #
-RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
 COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
 RUN pip install -e /home/${NB_USER}/.jupyter-xprahtml5-proxy
 

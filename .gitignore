@@ -13,3 +13,5 @@ deploy*
 images/rocketchat/
 images/whisper/
 draft.sh
+gpt4all
+.env
