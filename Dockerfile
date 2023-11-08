@@ -80,3 +80,5 @@ COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/l
 COPY --chown=${NB_USER}:users entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]
+
+COPY --chown=${NB_USER}:users notebooks /home/${NB_USER}/notebooks

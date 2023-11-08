@@ -19,7 +19,6 @@ services:
     entrypoint: ["/home/jovyan/work/entrypoint.sh"]
     volumes:
       - ./:/home/jovyan/work
-      - ./gpt4all:/home/jovyan/.cache/gpt4all
     # environment:
     #   # - OPENAI_API_KEY=
     #   # - DISPLAY=:100
