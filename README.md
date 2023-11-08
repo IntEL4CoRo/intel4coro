@@ -9,7 +9,7 @@
 ## Usage
 
 - Getting started [ROS2 Iron](https://docs.ros.org/en/iron/Tutorials.html) with binderhub
-[![Binder](https://binder.intel4coro.de/badge_logo.svg)](https://binder.intel4coro.de/v2/gh/IntEL4CoRo/docker-stacks.git/ros-icon)
+[![Binder](https://binder.intel4coro.de/badge_logo.svg)](https://binder.intel4coro.de/v2/gh/IntEL4CoRo/docker-stacks.git/ros-iron)
 
 ## Development
 
