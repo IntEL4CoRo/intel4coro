@@ -83,8 +83,8 @@ RUN pip install \
     pip cache purge
 
 # --- Install jupyterlab extensions --- #
-COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
-RUN pip install -e /home/${NB_USER}/.jupyter-xprahtml5-proxy
+# COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
+RUN pip install git+https://github.com/yxzhan/jupyter-xprahtml5-proxy.git
 RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
 
 # --- Create a ROS workspace with Robot Web Tools --- #

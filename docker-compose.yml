@@ -4,16 +4,16 @@ version: '3'
 services:
   jupyter-ros-xpra:
     image: intel4coro/base-notebook:20.04-noetic-full-xpra
-    build:
-      context: ./
-      dockerfile: ./Dockerfile
+    # build:
+    #   context: ./
+    #   dockerfile: ./Dockerfile
     stdin_open: true
     tty: true
     ports: 
       - 8888:8888
     privileged: true
-    # user: root
-    user: jovyan
+    user: root
+    # user: jovyan
     working_dir: /home/jovyan
     command: jupyter lab --allow-root --NotebookApp.token='' --no-browser --ip=0.0.0.0
     entrypoint: ["/home/jovyan/work/entrypoint.sh"]
