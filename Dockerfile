@@ -10,7 +10,6 @@ ENV DISPLAY=:100
 
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
 ENV ROS_ROOT=${ROS_PATH}/share/ros
-ENV ROS_WS=/home/${NB_USER}/workspace/ros
 
 # --- Install Oh-my-bash --- #
 USER ${NB_USER}
