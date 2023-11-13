@@ -1,4 +1,4 @@
-# Docker image of ROS2 iron on Jupyterhub/Binderhub
+# Docker image of ROS2 on Jupyterhub/Binderhub
 
 [![](https://img.shields.io/docker/pulls/intel4coro/base-notebook.svg)](https://hub.docker.com/r/intel4coro/base-notebook/tags)
 [![Binder](https://binder.intel4coro.de/badge_logo.svg)](https://binder.intel4coro.de/v2/gh/IntEL4CoRo/docker-stacks.git/ros-iron)
