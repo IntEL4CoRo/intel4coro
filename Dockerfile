@@ -34,7 +34,9 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/r
 RUN apt update && \
     apt install -y ros-dev-tools && \
     apt upgrade -y && \
-    apt install -y ros-${ROS_DISTRO}-${ROS_PKG} && \
+    apt install -y \
+        ros-${ROS_DISTRO}-${ROS_PKG} \
+        ros-${ROS_DISTRO}-gazebo-ros-pkgs && \
     apt clean && \
     echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc && \
     echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
@@ -47,7 +49,6 @@ RUN apt update && apt install -y \
         xpra \
         gdm3 \
         tmux \
-        firefox \
         nautilus \
         gnome-shell \
         gnome-session \
@@ -79,5 +80,3 @@ COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/l
 COPY --chown=${NB_USER}:users entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]
-
-COPY --chown=${NB_USER}:users notebooks /home/${NB_USER}/notebooks

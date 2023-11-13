@@ -8,9 +8,9 @@ services:
       dockerfile: ./Dockerfile
     stdin_open: true
     tty: true
-    env_file: .env
     ports: 
       - 8888:8888
+      - 11311:11311
     privileged: true
     # user: root
     user: jovyan
@@ -19,9 +19,9 @@ services:
     entrypoint: ["/home/jovyan/work/entrypoint.sh"]
     volumes:
       - ./:/home/jovyan/work
+    #   - /tmp/.X11-unix:/tmp/.X11-unix:rw
     # environment:
-    #   # - OPENAI_API_KEY=
-    #   # - DISPLAY=:100
+    #   - DISPLAY
     #   - NVIDIA_DRIVER_CAPABILITIES=all
     # deploy:
     #   resources:
