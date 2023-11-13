@@ -26,7 +26,7 @@ To build your own ROS2 environment based on this image to run your open source c
 ### Example of Dockerfile
 
 ```Dockerfile
-FROM intel4coro/base-notebook:22.04-iron
+FROM intel4coro/base-notebook:py3.10-ros-iron
 
 # Define environment variables
 ENV MY_ROS_WS=/home/${NB_USER}/my-ros-workspace

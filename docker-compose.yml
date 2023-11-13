@@ -2,7 +2,7 @@
 version: '3'
 services:
   jupyter-ros-xpra:
-    image: intel4coro/base-notebook:22.04-iron
+    image: intel4coro/base-notebook:py3.10-ros-iron
     build:
       context: ./
       dockerfile: ./Dockerfile
