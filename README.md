@@ -21,6 +21,12 @@ Start [ROS2 Iron tutorials](https://docs.ros.org/en/iron/Tutorials.html) on Bind
 
 >Note: Please start the "Xpra Desktop" in the JupyterLab Launcher to initiate the virtual display before you run GUI applications.
 
+#### Troubleshooting
+
+1. JupyterLab instance crashed when running `colcon build`
+  
+    Limit the number of building threads like this: `colcon build --parallel-workers 2`
+
 ### On Local Machine
 
 #### Prerequisites
