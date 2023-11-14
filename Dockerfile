@@ -79,6 +79,13 @@ RUN pip install --upgrade \
         colcon-common-extensions \
     && pip cache purge
 
+# --- rosdep init --- #
+USER root
+RUN rosdep init && \
+    rosdep update && \
+    rosdep fix-permissions
+USER ${NB_USER}
+
 # --- Install jupyterlab extensions --- #
 COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
 RUN pip install -e /home/${NB_USER}/.jupyter-xprahtml5-proxy
@@ -105,6 +112,6 @@ WORKDIR /home/${NB_USER}
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
 
 # --- Entrypoint --- #
-# COPY --chown=${NB_USER}:users entrypoint.sh /
-# ENTRYPOINT ["/entrypoint.sh"]
+COPY --chown=${NB_USER}:users entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]
