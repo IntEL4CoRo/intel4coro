@@ -73,6 +73,10 @@ RUN pip install --upgrade \
         jupyter-ai \
         openai \
         Pillow \
+        rosdep \
+        lark \
+        catkin_tools \
+        colcon-common-extensions \
     && pip cache purge
 
 # --- Install jupyterlab extensions --- #
@@ -101,6 +105,6 @@ WORKDIR /home/${NB_USER}
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
 
 # --- Entrypoint --- #
-COPY --chown=${NB_USER}:users entrypoint.sh /
-ENTRYPOINT ["/entrypoint.sh"]
+# COPY --chown=${NB_USER}:users entrypoint.sh /
+# ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]

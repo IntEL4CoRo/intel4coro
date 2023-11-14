@@ -100,6 +100,8 @@ docker compose up && \
 xhost -local:docker
 ```
 
+## Simulators
+
 ### Webots ROS2
 
 > Note: Webots is super performance intensive, better to run it with GPU enabled.
@@ -116,7 +118,7 @@ xhost -local:docker
 
 See [Webots - ROS2 documenation](https://docs.ros.org/en/iron/Tutorials/Advanced/Simulators/Webots/Setting-Up-Simulation-Webots-Basic.html) for more details and github repo [cyberbotics/webots_ros2](https://github.com/cyberbotics/webots_ros2/wiki/Examples) for more examples.
 
-### Gazebo classic Demos
+### Gazebo classic
 
 >Note: Unfortunately the Gazebo classic doesn't work on our BinderHub server.
 
@@ -131,7 +133,7 @@ Explaination of these demos can be found at the beginning of the `*.world` files
 Launch demo:
 
 ```bash
-gazebo --verbose gazebo_ros_wheel_slip_demo.world
+gazebo --verbose gazebo_ros_joint_pose_trajectory_demo.world
 ```
 
 ![screenshot-gazebo](./screenshots/screenshot-gazebo.png)
