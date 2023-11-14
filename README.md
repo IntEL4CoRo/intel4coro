@@ -1,13 +1,13 @@
-# Docker image of ROS2 on Jupyterhub/Binderhub
+# JupyterLab docker image with ROS2 iron
 
 [![](https://img.shields.io/docker/pulls/intel4coro/base-notebook.svg)](https://hub.docker.com/r/intel4coro/base-notebook/tags)
 [![Binder](https://binder.intel4coro.de/badge_logo.svg)](https://binder.intel4coro.de/v2/gh/IntEL4CoRo/docker-stacks.git/ros-iron)
 
 `intel4coro/base-notebook:py3.10-ros-iron`  is a ready-to-run ROS2 Docker image built on top of jupyter image [jupyter/minimal-notebook:python-3.10](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html#jupyter-minimal-notebook) , contains the following main softwares:
 
-- [ros-iron-desktop](https://docs.ros.org/en/iron/index.html): Desktop install of ROS, RViz, demos, tutorials.
-- [Jupyterlab 4.0](https://github.com/jupyterlab/jupyterlab): Web-based integrated development environment (IDE)
-- [XPRA Remote Desktop](https://github.com/Xpra-org/xpra): Virtual Display to display GUI applications on web browser
+- [ros-iron-desktop](https://docs.ros.org/en/iron/index.html): Desktop install of ROS2 iron with RViz, demos, tutorials.
+- [Jupyterlab](https://github.com/jupyterlab/jupyterlab): Web-based integrated development environment (IDE)
+- [XPRA Remote Desktop](https://github.com/Xpra-org/xpra): Virtual Display to project native GUI applications on web browser.
 - [Webots ROS2 Interface](https://github.com/cyberbotics/webots_ros2): Package that provides the necessary interfaces to simulate a robot in the [Webots](https://cyberbotics.com/) Open-source 3D robots simulator.
 - [Gazebo Classic](http://classic.gazebosim.org/): Classic Robotic Simulator
 
@@ -15,9 +15,37 @@
 
 ## Quick Start
 
+### On BinderHub
+
 Start [ROS2 Iron tutorials](https://docs.ros.org/en/iron/Tutorials.html) on Binderhub: [![Binder](https://binder.intel4coro.de/badge_logo.svg)](https://binder.intel4coro.de/v2/gh/IntEL4CoRo/docker-stacks.git/ros-iron)
 
 >Note: Please start the "Xpra Desktop" in the JupyterLab Launcher to initiate the virtual display before you run GUI applications.
+
+### On Local Machine
+
+#### Prerequisites
+
+- [Docker Engine](https://docs.docker.com/engine/install/)
+- [ubuntu 20.04](https://releases.ubuntu.com/jammy/) (Recommended)
+- Nvidia Graphic Card and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (Optional but recommended)
+
+#### Start Docker container
+
+```bash
+docker run --rm -p 8888:8888 intel4coro/base-notebook:py3.10-ros-iron jupyter lab --NotebookApp.token=''
+```
+
+Open url http://localhost:8888/
+
+#### Start Docker container with GPU
+
+```bash
+xhost +local:docker && \
+docker run --rm -p 8888:8888 -v /tmp/.X11-unix:/tmp/.X11-unix:rw --env DISPLAY=$DISPLAY --env NVIDIA_DRIVER_CAPABILITIES=all --gpus all intel4coro/base-notebook:py3.10-ros-iron && \
+xhost -local:docker
+```
+
+Recommended to start with docker-compose if having many custom configurations Example: [docker-compose.yml](./docker-compose.yml).
 
 ## Build environments for your git Repo
 
@@ -28,23 +56,24 @@ To build your own ROS2 environment based on this image to run your open source c
 ```Dockerfile
 FROM intel4coro/base-notebook:py3.10-ros-iron
 
-# Define environment variables
-ENV MY_ROS_WS=/home/${NB_USER}/my-ros-workspace
-
-# Change working directory (similar to command "cd")
-WORKDIR ${MY_ROS_WS}
-
-# Run bash command
-RUN {{ Initiate ROS workspace }}
-RUN pip install vcs catkin_tools
-
 # Run bash commands required root permission
 USER root
 RUN apt update && apt install nano vim
 USER ${NB_USER}
 
-# Copy files from your git repo
-COPY --chown=${NB_USER}:users . ${MY_ROS_WS}/src/my-repo-name
+# Define environment variables
+ENV MY_ROS_WS=/home/${NB_USER}/my-ros-workspace
+
+# Create your ROS workspace
+RUN mkdir -p ${MY_ROS_WS}/src
+# Change working directory (similar to command "cd")
+WORKDIR ${MY_ROS_WS}
+# Copy files from git repo to ROS workspace
+COPY --chown=${NB_USER}:users . src/my-repo-name
+# Install ROS packages dependencies
+RUN rosdep install -i --from-path src --rosdistro iron -y
+# Build ROS workspace
+RUN colcon build
 
 # Override the entrypoint to add startup scripts, (e.g., source your ROS workspace)
 # Note: Do not forget to add `exec "$@"` at the end of your entrypoint.
@@ -66,7 +95,7 @@ The config of running the docker image on your machine locally is specify in [do
   docker compose up
   ```
 
-- Open Web browser and go to http://localhost:8888/
+- Open url http://localhost:8888/
 
 - Force image rebuild
 
