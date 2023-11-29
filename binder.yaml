@@ -2,9 +2,6 @@ registry:
   username: <dockerhub-username>
   password: <dockerhub-token>
 
-imageCleaner:
-  enabled: false
-
 config:
   BinderHub:
     use_registry: true
