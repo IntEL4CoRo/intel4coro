@@ -32,7 +32,9 @@ COPY --chown=${NB_USER}:users ./bashrc.sh /home/${NB_USER}/.bashrc
 USER root
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
-RUN apt update -q && apt install -y \
+RUN apt update -q \
+  && apt dist-upgrade -y \
+  && apt install -y \
       ros-${ROS_DISTRO}-${ROS_PKG} \
       ros-${ROS_DISTRO}-tf2-tools \
   && apt clean \
@@ -55,19 +57,27 @@ RUN apt update && apt install -y \
 USER ${NB_USER}
 # --- Install python packages --- #
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
+# RUN pip install --upgrade "jupyterlab<4"\
 RUN pip install \
     autobahn \
     catkin-tools \
     cbor2 \
     cryptography==38.0.4 \
-    empy \
+    empy==3.3.4 \
     gnupg \
     ipywidgets \
-    jupyterlab==3.6.5 \
+    jupyterlab~=3.6.5 \
+    sidecar==0.5.2 \
     jupyter-resource-usage \
     jupyter-offlinenotebook \
     jupyter-server-proxy \
-    jupyterlab-git \
+    jupyterlab-git~=0.30.0 \
+    jupyter-archive \
+    jupyterlab_execute_time \
+    jupyterlab-language-pack-de-DE \
+    jupyter-ai~=1.10.0 \
+    openai \
+    service_identity \
     pymongo \
     Pillow \
     pycryptodomex \
@@ -79,13 +89,14 @@ RUN pip install \
     simplejpeg \
     twisted \
     vcstool \
-    wstool && \
-    pip cache purge
+    wstool \
+&& pip cache purge
 
 # --- Install jupyterlab extensions --- #
 # COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
 RUN pip install git+https://github.com/yxzhan/jupyter-xprahtml5-proxy.git
-RUN pip install https://raw.githubusercontent.com/yxzhan/jlab-enhanced-cell-toolbar/main/dist/jlab-enhanced-cell-toolbar-4.0.0.tar.gz
+RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.3.2.tar.gz \
+  https://raw.githubusercontent.com/yxzhan/extension-examples/main/cell-toolbar/dist/jupyterlab_examples_cell_toolbar-0.1.4.tar.gz
 
 # --- Create a ROS workspace with Robot Web Tools --- #
 RUN mkdir -p ${ROS_WS}/src
@@ -98,32 +109,24 @@ RUN catkin init && \
     wstool init && \
     wstool merge https://raw.githubusercontent.com/yxzhan/rvizweb/master/.rosinstall && \
     wstool update && \
-    catkin config --extend ${ROS_PATH} && \
-    rosdep update && \
-    pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.2.8.tar.gz
+    catkin config --extend ${ROS_PATH}
 
 USER root
-RUN rosdep install -y --ignore-src --from-paths ./ -r
+RUN apt update && \
+    rosdep update && \
+    rosdep install -y --ignore-src --from-paths ./ -r && \
+    rosdep fix-permissions
 
 USER ${NB_USER}
 RUN catkin build && \
     echo "source ${ROS_WS}/devel/setup.bash" >> /home/${NB_USER}/.bashrc
 
-# --- Install Gazebo web client --- #
-# WORKDIR /home/${NB_USER}
-# USER root
-# RUN apt install -y libjansson-dev libboost-dev imagemagick libtinyxml-dev mercurial
-# USER ${NB_USER}
-# RUN mamba init && \
-#     mamba create -n gzweb nodejs==11.6.0 && \
-#     mamba && \
-#     git clone https://github.com/osrf/gzweb -b gzweb_1.4.1 && \
-#     cd gzweb && \
-#     source /usr/share/gazebo/setup.sh && \
-#     npm run deploy --- -m
-
 USER ${NB_USER}
 WORKDIR /home/${NB_USER}
+
+# --- update nodejs to version 18 for building jupyter extensions --- #
+RUN mamba install -y nodejs=18
+
 # --- Appy JupyterLab Settings --- #
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
 
