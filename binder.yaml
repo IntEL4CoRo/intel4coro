@@ -1,5 +1,5 @@
 registry:
-  username: yxzhan
+  username: <dockerhub-username>
   password: <dockerhub-token>
 
 imageCleaner:
@@ -8,5 +8,5 @@ imageCleaner:
 config:
   BinderHub:
     use_registry: true
-    image_prefix: yxzhan/binder-dev-
+    image_prefix: <dockerhub-username>/binder-
     hub_url: <jupyterhub-url>
