@@ -1,18 +1,3 @@
-# Install JupyberHub
-helm upgrade --cleanup-on-fail \
-  --install cram jupyterhub/jupyterhub \
-  --namespace cram \
-  --create-namespace \
-  --version=2.0.0 \
-  --values ./jupyter.yaml
-
-# Upgrade JupyberHub
-helm upgrade --cleanup-on-fail \
-   cram jupyterhub/jupyterhub \
-  --namespace cram \
-  --version=2.0.0 \
-  --values ./jupyter.yaml
-
 # Install BinderHub
 helm upgrade --cleanup-on-fail \
   --install mybinderhub \
@@ -28,9 +13,9 @@ helm upgrade mybinderhub --cleanup-on-fail \
   -f ./binder.yaml
 
 # Monitor pods status
-watch kubectl get pods -n cram
+watch kubectl get pods -n binder
 watch kubectl get pods --all-namespaces
-kubectl get pods -o wide --namespace cram
+kubectl get pods -o wide --namespace binder
 
 # Get cluster info
 kubectl cluster-info
@@ -47,12 +32,12 @@ microk8s.kubectl get pods --all-namespaces"
 kubectl get all -A
 
 # Start a bash session in the Pod’s container
-kubectl exec -ti -n cram hub-8686c49c66-dfwgf -- bash
+kubectl exec -ti -n binder hub-8686c49c66-dfwgf -- bash
 
 # Delete a pod
 kubectl delete pod jupyter-admin
 # Delete pods name with keyword "jupyter-yxzhan"
-kubectl get pods -n cram --no-headers=true | awk '/jupyter-yxzhan/{print $1}'| xargs kubectl delete pod -n cram
+kubectl get pods -n binder --no-headers=true | awk '/jupyter-yxzhan/{print $1}'| xargs kubectl delete pod -n binder
 
 # Get all service
 kubectl get services --all-namespaces
@@ -67,10 +52,10 @@ kubectl port-forward service/kubernetes-dashboard -n kube-system 8080:443 --addr
 
 # Output logs of a pod
 kubectl logs jupyter-admin
-kubectl logs -n cram hub-8686c49c66-dfwgf -f
+kubectl logs -n binder hub-8686c49c66-dfwgf -f
 kubectl describe pod jupyter-admin
 
- kubectl --namespace=cram describe service proxy-public
+ kubectl --namespace=binder describe service proxy-public
 # Storage related
 kubectl get storageClass
 kubectl get pods -n openebs
@@ -98,15 +83,15 @@ microk8s status --wait-ready
 microk8s inspect
 microk8s dashboard-proxy
 microk8s.ctr images list
-microk8s ctr images ls name~='yxzhan' 
-microk8s ctr images rm $(microk8s ctr images ls name~='yxzhan' | awk {'print $1'})
+microk8s ctr images ls name~='intel4coro' 
+microk8s ctr images rm $(microk8s ctr images ls name~='intel4coro' | awk {'print $1'})
 
 # Delete a helm release
-helm delete binder --namespace binder & \
+helm delete binder --namespace binder && \
 kubectl delete namespace binder
 
-# Set default kubernetes namespace to cram
-kubectl config set-context $(kubectl config current-context) --namespace cram
+# Set default kubernetes namespace to binder
+kubectl config set-context $(kubectl config current-context) --namespace binder
 
 # Config storage class
 microk8s.kubectl apply -f ./local-storage-dir.yaml
