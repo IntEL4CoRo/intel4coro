@@ -46,6 +46,7 @@ RUN wget -O - https://xpra.org/gpg.asc | apt-key add - && \
     echo "deb https://xpra.org/ focal main" > /etc/apt/sources.list.d/xpra.list
 RUN apt update && apt install -y \
     xpra \
+    firefox \
     gdm3 \
     nautilus \
     gnome-shell \
@@ -53,6 +54,11 @@ RUN apt update && apt install -y \
     gnome-terminal \
     libqt5x11extras5 \
     xvfb
+
+# Fix xpra html5 client bug
+RUN sed -i '547s/self/this/' /usr/share/xpra/www/js/Client.js
+RUN rm /usr/share/xpra/www/js/Client.js.gz
+RUN rm /usr/share/xpra/www/js/Client.js.br
 
 USER ${NB_USER}
 # --- Install python packages --- #
