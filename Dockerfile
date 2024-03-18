@@ -99,7 +99,6 @@ RUN pip install \
 && pip cache purge
 
 # --- Install jupyterlab extensions --- #
-# COPY --chown=${NB_USER}:users jupyter-xprahtml5-proxy /home/${NB_USER}/.jupyter-xprahtml5-proxy
 RUN pip install git+https://github.com/yxzhan/jupyter-xprahtml5-proxy.git
 RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.3.2.tar.gz \
   https://raw.githubusercontent.com/yxzhan/extension-examples/main/cell-toolbar/dist/jupyterlab_examples_cell_toolbar-0.1.4.tar.gz
@@ -130,15 +129,15 @@ RUN catkin build && \
 USER ${NB_USER}
 WORKDIR /home/${NB_USER}
 
-# --- update nodejs to version 18 for building jupyter extensions --- #
+# --- update nodejs to version 18 for installing jupyter extensions from source --- #
 RUN mamba install -y nodejs=18
 
-# --- Appy JupyterLab Settings --- #
+# --- Copy JupyterLab UI settings files --- #
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
+COPY --chown=${NB_USER}:users webapps.json ${ROS_WS}/src/rvizweb/webapps/app.json
+COPY --chown=${NB_USER}:users xpra-logo.svg ${ROS_WS}/src/rvizweb/webapps/xpra-logo.svg
 
 # --- Entrypoint --- #
 COPY --chown=${NB_USER}:users entrypoint.sh /
-COPY --chown=${NB_USER}:users webapps.json ${ROS_WS}/src/rvizweb/webapps/app.json
-COPY --chown=${NB_USER}:users xpra-logo.svg ${ROS_WS}/src/rvizweb/webapps/xpra-logo.svg
 ENTRYPOINT ["/entrypoint.sh"]
 CMD [ "start-notebook.sh" ]

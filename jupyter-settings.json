@@ -1,7 +1,10 @@
 {
   "@jupyterlab/apputils-extension:themes": {
-    "theme": "JupyterLab Dark",
+    "theme": "JupyterLab Light",
     "theme-scrollbars": true
+  },
+  "@jupyterlab/translation-extension:plugin": {
+    "locale": "en"
   },
   "@jupyterlab/apputils-extension:notification": {
     "checkForUpdates": false,
@@ -16,8 +19,5 @@
       "codeFolding": true,
       "lineWrap": false
     }
-  },
-  "@jupyterlab/translation-extension:plugin": {
-    "locale": "en"
   }
 }
