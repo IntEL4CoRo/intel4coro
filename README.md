@@ -317,8 +317,10 @@ Kubernetes Dashboard is a very useful tool for managing your Kubernetes clusters
 
 ## 9. Update Deployment
 
-Every time you update the config file [binder.yaml](./binder.yaml) or want to upgrade to a newer Binderhub release, need to run the helm update to make changes alive:
+Every time you update the config file [binder.yaml](./binder.yaml) or want to upgrade to a newer [Binderhub release](https://hub.jupyter.org/helm-chart/#development-releases-binderhub), need to run the following two commands to make changes alive:
 
+    helm repo update
+ 
     microk8s.helm upgrade binder --cleanup-on-fail \
         jupyterhub/binderhub --version=${A new binderhub release} \
         --namespace=binder \
