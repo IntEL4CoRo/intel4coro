@@ -8,7 +8,6 @@ ENV ROS_DISTRO=noetic
 ENV ROS_PATH=/opt/ros/${ROS_DISTRO}
 ENV ROS_ROOT=${ROS_PATH}/share/ros
 ENV ROS_WS=/home/${NB_USER}/workspace/ros
-ENV DISPLAY=:100
 
 # --- Install basic tools --- #
 USER root
@@ -41,24 +40,45 @@ RUN apt update -q \
   && echo "source ${ROS_PATH}/setup.bash" >> /root/.bashrc \
   && echo "source ${ROS_PATH}/setup.bash" >> /home/${NB_USER}/.bashrc
 
-# --- Install XPRA and GUI tools --- #
-RUN wget -O - https://xpra.org/gpg.asc | apt-key add - && \
-    echo "deb https://xpra.org/ focal main" > /etc/apt/sources.list.d/xpra.list
-RUN apt update && apt install -y \
-    xpra \
-    firefox \
-    gdm3 \
-    nautilus \
-    gnome-shell \
-    gnome-session \
-    gnome-terminal \
-    libqt5x11extras5 \
-    xvfb
+# --- Install VNC server and XFCE desktop environment --- #
+USER root
+RUN apt-get -y -qq update \
+ && apt-get -y -qq install \
+        dbus-x11 \
+        firefox \
+        xfce4 \
+        xfce4-panel \
+        xfce4-session \
+        xfce4-settings \
+        xorg \
+        xubuntu-icon-theme \
+        fonts-dejavu \
+    # Disable the automatic screenlock since the account password is unknown
+ && apt-get -y -qq remove xfce4-screensaver \
+    # chown $HOME to workaround that the xorg installation creates a
+    # /home/jovyan/.cache directory owned by root
+    # Create /opt/install to ensure it's writable by pip
+ && mkdir -p /opt/install \
+ && chown -R $NB_UID:$NB_GID $HOME /opt/install \
+ && rm -rf /var/lib/apt/lists/*
 
-# Fix xpra html5 client bug
-RUN sed -i '547s/self/this/' /usr/share/xpra/www/js/Client.js
-RUN rm /usr/share/xpra/www/js/Client.js.gz
-RUN rm /usr/share/xpra/www/js/Client.js.br
+# Install a VNC server, either TigerVNC (default) or TurboVNC
+ENV PATH=/opt/TurboVNC/bin:$PATH
+RUN echo "Installing TurboVNC"; \
+    # Install instructions from https://turbovnc.org/Downloads/YUM
+    wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
+    gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg; \
+    wget -O /etc/apt/sources.list.d/TurboVNC.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list; \
+    apt-get -y -qq update; \
+    apt-get -y -qq install \
+        turbovnc \
+    ; \
+    rm -rf /var/lib/apt/lists/*;
+
+USER $NB_USER
+RUN conda install -y websockify
+RUN pip install jupyter-remote-desktop-proxy
+ENV DISPLAY=:1
 
 USER ${NB_USER}
 # --- Install python packages --- #
@@ -99,7 +119,6 @@ RUN pip install \
 && pip cache purge
 
 # --- Install jupyterlab extensions --- #
-RUN pip install git+https://github.com/yxzhan/jupyter-xprahtml5-proxy.git
 RUN pip install https://raw.githubusercontent.com/yxzhan/jupyterlab-rviz/master/dist/jupyterlab_rviz-0.3.2.tar.gz \
   https://raw.githubusercontent.com/yxzhan/extension-examples/main/cell-toolbar/dist/jupyterlab_examples_cell_toolbar-0.1.4.tar.gz
 
@@ -135,7 +154,6 @@ RUN mamba install -y nodejs=18
 # --- Copy JupyterLab UI settings files --- #
 COPY --chown=${NB_USER}:users ./jupyter-settings.json /opt/conda/share/jupyter/lab/settings/overrides.json
 COPY --chown=${NB_USER}:users webapps.json ${ROS_WS}/src/rvizweb/webapps/app.json
-COPY --chown=${NB_USER}:users xpra-logo.svg ${ROS_WS}/src/rvizweb/webapps/xpra-logo.svg
 
 # --- Entrypoint --- #
 COPY --chown=${NB_USER}:users entrypoint.sh /

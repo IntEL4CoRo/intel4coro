@@ -3,7 +3,7 @@
 version: '3'
 services:
   jupyter-ros-xpra:
-    image: intel4coro/base-notebook:20.04-noetic
+    image: intel4coro/base-notebook:20.04-noetic-vnc
     build:
       context: ./
       dockerfile: ./Dockerfile
@@ -12,20 +12,22 @@ services:
     ports: 
       - 8888:8888
     privileged: true
-    # user: root
-    user: jovyan
+    user: root
+    # user: jovyan
     working_dir: /home/jovyan
     command: jupyter lab --allow-root --NotebookApp.token='' --no-browser --ip=0.0.0.0
     entrypoint: ["/home/jovyan/work/entrypoint.sh"]
     volumes:
       - ./:/home/jovyan/work
-    # environment:
-    #   - DISPLAY=:100
-    #   - NVIDIA_DRIVER_CAPABILITIES=all
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+      - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

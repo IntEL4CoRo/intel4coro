@@ -18,7 +18,15 @@
 - Run and Build Docker image
 
   ```bash
-  docker compose up
+  docker compose -f docker-compose.yml up --build
+  ```
+
+  or run with X-forwarding:
+
+  ```bash
+  xhost +local:docker && \
+  docker compose -f docker-compose.yml up --build && \
+  xhost -local:docker
   ```
 
 - Open Web browser and go to http://localhost:8888/
@@ -26,7 +34,7 @@
 - Force image rebuild
 
   ```bash
-  docker compose -f docker-compose.yml up -d --build 
+  docker compose -f docker-compose.yml up -d --build --no-cache
   ```
 
 ### Files Descriptions
