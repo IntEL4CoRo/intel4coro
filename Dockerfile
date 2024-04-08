@@ -105,8 +105,7 @@ RUN pip install \
     jupyterlab_execute_time \
     jupyterlab-language-pack-de-DE \
     jupyter-ai~=1.10.0 \
-    openai \
-    langchain_openai \
+    openai==1.13.3 \
     service_identity \
     pymongo \
     Pillow \
