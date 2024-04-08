@@ -51,6 +51,9 @@ RUN apt-get -y -qq update \
         xfce4-session \
         xfce4-settings \
         xorg \
+        gnome-shell \
+        gnome-session \
+        gnome-terminal \
         xubuntu-icon-theme \
         fonts-dejavu \
     # Disable the automatic screenlock since the account password is unknown
@@ -103,6 +106,7 @@ RUN pip install \
     jupyterlab-language-pack-de-DE \
     jupyter-ai~=1.10.0 \
     openai \
+    langchain_openai \
     service_identity \
     pymongo \
     Pillow \
